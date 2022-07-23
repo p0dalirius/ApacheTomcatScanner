@@ -20,7 +20,8 @@
  - [ ] Scan targets type CIDR, DNS, IP
  - [ ] Retreive list of hosts from a file
  - [ ] Use a proxy with `--proxy-ip` and `--proxy-port`
-
+ - [ ] Retreive list of computers in a Windows domain (`--auth-domain`, `--auth-user`, `--auth-password` / `--auth-hash`) through a LDAP query.
+ 
 ## Contributing
 
 Pull requests are welcome. Feel free to open an issue if you want to add other features.

@@ -12,7 +12,17 @@
 
 ## Features
 
- - [x] ee
+ - [x] TBD
+
+## Usage
+
+```
+
+```
+
+## Example
+
+---
 
 ## Developpement roadmap
 

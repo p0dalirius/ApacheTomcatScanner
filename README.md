@@ -14,14 +14,17 @@
 
  - [x] ee
 
-## TODO
+## Developpement roadmap
 
- - [ ] Database in JSON format with references and affected versions and OSes
- - [ ] Scan targets type CIDR, DNS, IP
- - [ ] Retreive list of hosts from a file
- - [ ] Use a proxy with `--proxy-ip` and `--proxy-port`
- - [ ] Retreive list of computers in a Windows domain (`--auth-domain`, `--auth-user`, `--auth-password` / `--auth-hash`) through a LDAP query.
- 
+ - [ ] Core
+    + [ ] Loading database in JSON format with references and affected versions and OSes of each vulnerability on Apache Tomcat
+    + [ ] Use a proxy with `--proxy-ip` and `--proxy-port`
+   
+ - [ ] Targets source
+    + [ ] Accepting targets of type CIDR, DNS and IP
+    + [ ] Retreive list of targets from a file (`--targets-file`)
+    + [ ] Retreive list of targets in a Windows domain (`--auth-domain`, `--auth-user`, `--auth-password` / `--auth-hash`) through a LDAP query listing all computers of the domain.
+
 ## Contributing
 
 Pull requests are welcome. Feel free to open an issue if you want to add other features.

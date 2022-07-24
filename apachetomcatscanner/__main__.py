@@ -12,19 +12,22 @@ from apachetomcatscanner.utils import parse_ip_dns_cidr_target
 
 VERSION = "1.0"
 
-banner = """Apache Tomcat Scanner v%s - by @podalirius_""" % VERSION
+banner = """Apache Tomcat Scanner v%s - by @podalirius_\n""" % VERSION
 
 
 def load_targets(options):
     targets = []
 
-    # Load targets from domain computers
+    # Loading targets from domain computers
     if options.auth_domain is not None and options.auth_user is not None and (options.auth_password is not None or options.auth_hash is not None):
-        pass
+        if options.verbose:
+            print("[debug] Loading targets from computers in the domain '%s'" % options.auth_domain)
 
-    # Load targets line by line from a targets file
+    # Loading targets line by line from a targets file
     if options.targets_file is not None:
         if os.path.exists(options.targets_file):
+            if options.verbose:
+                print("[debug] Loading targets line by line from targets file '%s'" % options.targets_file)
             f = open(options.targets_file, "r")
             for line in f.readlines():
                 targets.append(line.strip())
@@ -32,17 +35,24 @@ def load_targets(options):
         else:
             print("[!] Could not open targets file '%s'" % options.targets_file)
 
-    # Load targets from --target option
+    # Loading targets from --target option
     if len(options.target) != 0:
+        if options.verbose:
+            print("[debug] Loading targets from --target options")
         for target in options.target:
             targets.append(target)
 
     # Sort uniq on targets list
     targets = sorted(list(set(targets)))
+
+    # Parsing target to filter IP/DNS/CIDR
+    # TODO
+
     return targets
 
 
 def parseArgs():
+    print(banner)
     parser = argparse.ArgumentParser(description="Description message")
     parser.add_argument("-v", "--verbose", default=False, action="store_true", help='Verbose mode. (default: False)')
 
@@ -70,6 +80,8 @@ def main():
     options = parseArgs()
 
     targets = load_targets(options)
+    if options.verbose:
+        print("[debug] Loaded %d targets" % len(targets))
 
     # Exploring targets
     for target in targets:

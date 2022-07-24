@@ -9,7 +9,8 @@ class Target(object):
     Documentation for class Target
     """
 
-    def __init__(self):
+    def __init__(self, target_host, target_port=8080):
         super(Target, self).__init__()
-        
-    
+        self.target_host = target_host
+        self.target_port = target_port
+

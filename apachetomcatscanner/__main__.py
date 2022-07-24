@@ -2,18 +2,11 @@
 # -*- coding: utf-8 -*-
 # File name          : __main__.py
 # Author             : Podalirius (@podalirius_)
-# Date created       : 22 Jul 2022
+# Date created       : 24 Jul 2022
 
 
 import argparse
-import os
-import sys
-
-from coercer.protocols.MS_EFSR import MS_EFSR
-from coercer.protocols.MS_FSRVP import MS_FSRVP
-from coercer.protocols.MS_DFSNM import MS_DFSNM
-from coercer.protocols.MS_RPRN import MS_RPRN
-from coercer.utils.smb import connect_to_pipe, can_bind_to_protocol, get_available_pipes_and_protocols
+from apachetomcatscanner.utils import parse_ip_dns_cidr_target
 
 
 VERSION = "1.0"
@@ -29,10 +22,16 @@ def parseArgs():
 
 
 def main():
-    targets = []
-    for target in options.targets:
-        targets += parse_ip_dns_cidr_target(target)
+    options = parseArgs()
 
+    targets = ["127.0.0.1:10001"]
+    # for target in options.targets:
+    #     targets += parse_ip_dns_cidr_target(target)
+
+    # Exploring targets
+    for target in targets:
+        pass
+    
 
 if __name__ == '__main__':
     main()

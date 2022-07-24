@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # File name          : setup.py
 # Author             : Podalirius (@podalirius_)
-# Date created       : 17 Jul 2022
+# Date created       : 24 Jul 2022
 
 import setuptools
 

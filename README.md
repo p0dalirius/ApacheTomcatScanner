@@ -24,16 +24,16 @@
 
 ---
 
-## Developpement roadmap
+## Development roadmap
 
  - [ ] Core
     + [ ] Loading database in JSON format with references and affected versions and OSes of each vulnerability on Apache Tomcat
-    + [ ] Use a proxy with `--proxy-ip` and `--proxy-port`
+    + [x] Use a proxy with `--proxy-ip` and `--proxy-port`
    
  - [ ] Targets source
     + [ ] Accepting targets of type CIDR, DNS and IP
-    + [ ] Retreive list of targets from a file (`--targets-file`)
-    + [ ] Retreive list of targets in a Windows domain (`--auth-domain`, `--auth-user`, `--auth-password` / `--auth-hash`) through a LDAP query listing all computers of the domain.
+    + [x] Retreive list of targets from a file (`--targets-file`)
+    + [x] Retreive list of targets in a Windows domain (`--auth-domain`, `--auth-user`, `--auth-password` / `--auth-hash`) through a LDAP query listing all computers of the domain.
 
 ## Contributing
 

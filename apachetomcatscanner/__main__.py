@@ -7,6 +7,8 @@
 
 import argparse
 import os
+import re
+
 from apachetomcatscanner.utils import parse_ip_dns_cidr_target
 
 
@@ -46,7 +48,11 @@ def load_targets(options):
     targets = sorted(list(set(targets)))
 
     # Parsing target to filter IP/DNS/CIDR
-    # TODO
+    for target in targets:
+        matched = re.match(r'((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]))/([123][0-9]|[1-9])', target)
+        if matched is not None:
+            print(target, "it is a IPv4 CIDR")
+        # TODO
 
     return targets
 
@@ -70,8 +76,13 @@ def parseArgs():
 
     args = parser.parse_args()
 
+    if (args.targets_file is None) and (len(args.target) == 0) and (args.auth_domain is None and args.auth_user is None and (args.auth_password is None or args.auth_hash is None)):
+        parser.print_help()
+        print("\n[!] No targets specified.")
+
     if args.auth_password is not None and args.auth_hash is not None:
-        print("[!] Options --auth-password/--auth-hash are mutually exclusive.")
+        parser.print_help()
+        print("\n[!] Options --auth-password/--auth-hash are mutually exclusive.")
 
     return args
 

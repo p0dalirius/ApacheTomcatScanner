@@ -62,7 +62,7 @@ def load_targets(options):
 
 def parseArgs():
     print(banner)
-    parser = argparse.ArgumentParser(description="Description message")
+    parser = argparse.ArgumentParser(description="A python script to scan for Apache Tomcat server vulnerabilities.")
     parser.add_argument("-v", "--verbose", default=False, action="store_true", help='Verbose mode. (default: False)')
     parser.add_argument("-T", "--threads", default=8, type=int, help='Number of threads (default: 5)')
 

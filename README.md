@@ -22,6 +22,8 @@
 
 ## Example
 
+![](./.github/example.png)
+
 ---
 
 ## Development roadmap

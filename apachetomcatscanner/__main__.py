@@ -4,15 +4,14 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 24 Jul 2022
 
-
 import argparse
 import os
-import re
+from apachetomcatscanner.utils.scan import scan_worker
+from sectools.network.ip import is_ipv4_cidr, is_ipv4_addr, is_ipv6_addr, expand_cidr
+from concurrent.futures import ThreadPoolExecutor
 
-from apachetomcatscanner.utils import parse_ip_dns_cidr_target
 
-
-VERSION = "1.0"
+VERSION = "1.1"
 
 banner = """Apache Tomcat Scanner v%s - by @podalirius_\n""" % VERSION
 
@@ -47,20 +46,25 @@ def load_targets(options):
     # Sort uniq on targets list
     targets = sorted(list(set(targets)))
 
+    final_targets = []
     # Parsing target to filter IP/DNS/CIDR
     for target in targets:
-        matched = re.match(r'((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]))/([123][0-9]|[1-9])', target)
-        if matched is not None:
-            print(target, "it is a IPv4 CIDR")
-        # TODO
+        if is_ipv4_cidr(target):
+            final_targets += expand_cidr(target)
+        elif is_ipv4_addr(target):
+            final_targets.append(target)
+        elif is_ipv6_addr(target):
+            final_targets.append(target)
 
-    return targets
+    final_targets = sorted(list(set(final_targets)))
+    return final_targets
 
 
 def parseArgs():
     print(banner)
     parser = argparse.ArgumentParser(description="Description message")
     parser.add_argument("-v", "--verbose", default=False, action="store_true", help='Verbose mode. (default: False)')
+    parser.add_argument("-T", "--threads", default=8, type=int, help='Number of threads (default: 5)')
 
     group_configuration = parser.add_argument_group()
     group_configuration.add_argument("-PI", "--proxy-ip", default=None, help='')
@@ -69,6 +73,7 @@ def parseArgs():
     group_targets_source = parser.add_argument_group()
     group_targets_source.add_argument("-tf", "--targets-file", default=None, help='')
     group_targets_source.add_argument("-tt", "--target", default=[], action='append', help='Target IP, FQDN or CIDR')
+    group_targets_source.add_argument("-tp", "--target-ports", default="8080", help='Target ports to scan top search for Apache Tomcat servers.')
     group_targets_source.add_argument("-ad", "--auth-domain", default=None, help='')
     group_targets_source.add_argument("-au", "--auth-user", default=None, help='')
     group_targets_source.add_argument("-ap", "--auth-password", default=None, help='')
@@ -90,13 +95,23 @@ def parseArgs():
 def main():
     options = parseArgs()
 
+    # Parsing targets and ports
     targets = load_targets(options)
-    if options.verbose:
-        print("[debug] Loaded %d targets" % len(targets))
+    if "," in options.target_ports:
+        ports = [int(port.strip()) for port in options.target_ports.split(',')]
+        print("[+] Targeting %d ports on %d targets" % (len(ports), len(targets)))
+    else:
+        ports = [int(options.target_ports.strip())]
+        print("[+] Targeting %d port (%s) on %d targets" % (len(ports), ports[0], len(targets)))
 
     # Exploring targets
-    for target in targets:
-        print(" - %s" % target)
+    print("[+] Searching for Apache Tomcats servers on specified targets ...")
+    results = {}
+    with ThreadPoolExecutor(max_workers=min(options.threads, len(targets))) as tp:
+        for target in targets:
+            for port in ports:
+                tp.submit(scan_worker, target, port, results)
+    print("[+] All done!")
 
 
 if __name__ == '__main__':

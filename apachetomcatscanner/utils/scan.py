@@ -3,8 +3,9 @@
 # File name          : scan.py
 # Author             : Podalirius (@podalirius_)
 # Date created       : 29 Jul 2022
-import re
 
+import base64
+import re
 import requests
 
 
@@ -54,6 +55,31 @@ def get_version_from_malformed_http_request(target, port):
             return version
 
 
+def try_default_credentials(target, port):
+    found_credentials = []
+    url = "http://%s:%d/manager/html" % (target, port)
+    try:
+        couple_username_passwords = [
+            {"username": "admin", "password": "admin"},
+            {"username": "admin", "password": "tomcat"},
+            {"username": "tomcat", "password": "tomcat"},
+            {"username": "tomcat", "password": "s3cret"}
+        ]
+        for credentials in couple_username_passwords:
+            auth_string = bytes(credentials["username"] + ':' + credentials["password"], 'utf-8')
+            r = requests.post(
+                url,
+                headers={
+                    "Authorization": "Basic " + base64.b64encode(auth_string).decode('utf-8')
+                }
+            )
+            if r.status_code in [200, 403]:
+                found_credentials.append((r.status_code, credentials))
+        return found_credentials
+    except Exception as e:
+        return found_credentials
+
+
 def scan_worker(target, port, results, timeout=1):
     DEBUG = False
     if DEBUG: print("[debug] scan_worker('%s', %d)" % (target, port))
@@ -65,14 +91,22 @@ def scan_worker(target, port, results, timeout=1):
         result["manager_accessible"] = is_tomcat_manager_accessible(target, port)
         if DEBUG and result["manager_accessible"]: print("[debug] Manager is accessible")
 
+        credentials = []
         if result["manager_accessible"]:
             # Test for default credentials
-            pass
+            credentials = try_default_credentials(target, port)
 
-        print("[>] [Apache Tomcat/\x1b[1;95m%s\x1b[0m] on \x1b[1;93m%s\x1b[0m:\x1b[1;93m%d\x1b[0m [Manager:%s]" % (
+        str_found_creds = []
+        if len(credentials) != 0:
+            for statuscode, creds in credentials:
+                str_found_creds.append("(username:\x1b[1;92m%s\x1b[0m password:\x1b[1;92m%s\x1b[0m)" % (creds["username"], creds["password"]))
+
+        print("[>] [Apache Tomcat/\x1b[1;95m%s\x1b[0m] on \x1b[1;93m%s\x1b[0m:\x1b[1;93m%d\x1b[0m (manager:%s) %s" % (
                 result["version"],
                 target,
                 port,
-                ("\x1b[1;92maccessible\x1b[0m" if result["manager_accessible"] else "\x1b[1;91mnot accessible\x1b[0m")
+                ("\x1b[1;92maccessible\x1b[0m" if result["manager_accessible"] else "\x1b[1;91mnot accessible\x1b[0m"),
+                ' '.join(str_found_creds)
             )
         )
+

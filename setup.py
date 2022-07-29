@@ -14,7 +14,7 @@ with open('requirements.txt', 'r', encoding='utf-8') as f:
 
 setuptools.setup(
     name="apachetomcatscanner",
-    version="1.0",
+    version="1.2",
     description="",
     url="https://github.com/p0dalirius/ApacheTomcatScanner",
     author="Podalirius",

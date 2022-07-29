@@ -11,7 +11,7 @@ from sectools.network.ip import is_ipv4_cidr, is_ipv4_addr, is_ipv6_addr, expand
 from concurrent.futures import ThreadPoolExecutor
 
 
-VERSION = "1.1"
+VERSION = "1.2"
 
 banner = """Apache Tomcat Scanner v%s - by @podalirius_\n""" % VERSION
 

@@ -9,9 +9,9 @@ import os
 
 
 instances = {
-    "tomcat_8_5_81": "docker run --rm -d --name tomcat_8_5_81 -p 10001:8080 tomcat:8.5.81-jdk8-corretto",
-    "tomcat_7_0_59": "docker run --rm -d --name tomcat_7_0_59 -p 10002:8080 tomcat:7.0.59",
-    "tomcat_6_0_43": "docker run --rm -d --name tomcat_6_0_43 -p 10003:8080 tomcat:6.0.43"
+    "tomcat_8_5_81": "docker run --rm -d --name tomcat_8_5_81 -p 10001:8080 -v $(pwd)/versions/8.5.81/tomcat-users.xml:/usr/local/tomcat/conf/tomcat-users.xml tomcat:8.5.81-jdk8-corretto",
+    "tomcat_7_0_59": "docker run --rm -d --name tomcat_7_0_59 -p 10002:8080 -v $(pwd)/versions/7.0.59/tomcat-users.xml:/usr/local/tomcat/conf/tomcat-users.xml tomcat:7.0.59",
+    "tomcat_6_0_43": "docker run --rm -d --name tomcat_6_0_43 -p 10003:8080 -v $(pwd)/versions/6.0.43/tomcat-users.xml:/usr/local/tomcat/conf/tomcat-users.xml tomcat:6.0.43"
 }
 
 

@@ -75,11 +75,13 @@ def parseArgs():
     print(banner)
     parser = argparse.ArgumentParser(description="A python script to scan for Apache Tomcat server vulnerabilities.")
     parser.add_argument("-v", "--verbose", default=False, action="store_true", help='Verbose mode. (default: False)')
+    parser.add_argument("-C", "--list-cves", default=False, action="store_true", help='List CVE ids affecting each version found. (default: False)')
     parser.add_argument("-T", "--threads", default=8, type=int, help='Number of threads (default: 5)')
 
     group_configuration = parser.add_argument_group()
-    group_configuration.add_argument("-PI", "--proxy-ip", default=None, help='')
-    group_configuration.add_argument("-PP", "--proxy-port", default=None, help='')
+    group_configuration.add_argument("-PI", "--proxy-ip", default=None, help='Proxy IP.')
+    group_configuration.add_argument("-PP", "--proxy-port", default=None, help='Proxy port')
+    group_configuration.add_argument("-rt", "--request-timeout", default=1, type=int, help='')
 
     group_targets_source = parser.add_argument_group()
     group_targets_source.add_argument("-tf", "--targets-file", default=None, help='')
@@ -121,13 +123,15 @@ def main():
         print("[+] Targeting %d port (%s) on %d targets" % (len(ports), ports[0], len(targets)))
 
     # Exploring targets
-    print("[+] Searching for Apache Tomcats servers on specified targets ...")
-    results = {}
-    with ThreadPoolExecutor(max_workers=min(options.threads, len(targets))) as tp:
-        for target in targets:
-            for port in ports:
-                tp.submit(scan_worker, target, port, results, vulns_db)
-    print("[+] All done!")
+
+    if len(targets) != 0 and options.threads != 0:
+        print("[+] Searching for Apache Tomcats servers on specified targets ...")
+        results = {}
+        with ThreadPoolExecutor(max_workers=min(options.threads, len(targets))) as tp:
+            for target in targets:
+                for port in ports:
+                    tp.submit(scan_worker, target, port, results, vulns_db, options.request_timeout, options.list_cves)
+        print("[+] All done!")
 
 
 if __name__ == '__main__':

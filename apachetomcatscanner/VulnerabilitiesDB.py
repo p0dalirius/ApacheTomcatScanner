@@ -46,7 +46,7 @@ class VulnerabilitiesDB(object):
                 for version in cve_data["affected_versions"]:
                     if version["tag"] not in self.versions_to_cves.keys():
                         self.versions_to_cves[version["tag"]] = []
-                    self.versions_to_cves[version["tag"]].append(cve_id)
+                    self.versions_to_cves[version["tag"]].append(cve_data)
 
     def get_vulnerabilities_of_version_sorted_by_criticity(self, version_tag, colors=False, reverse=False):
         colored_criticity = {

@@ -6,6 +6,9 @@
 
 import argparse
 import os
+import sys
+
+from apachetomcatscanner.VulnerabilitiesDB import VulnerabilitiesDB
 from apachetomcatscanner.utils.scan import scan_worker
 from apachetomcatscanner.utils.targets import get_computers_from_domain
 from sectools.network.ip import is_ipv4_cidr, is_ipv4_addr, is_ipv6_addr, expand_cidr
@@ -93,16 +96,20 @@ def parseArgs():
     if (args.targets_file is None) and (len(args.target) == 0) and (args.auth_domain is None and args.auth_user is None and (args.auth_password is None or args.auth_hash is None)):
         parser.print_help()
         print("\n[!] No targets specified.")
+        sys.exit(0)
 
     if args.auth_password is not None and args.auth_hash is not None:
         parser.print_help()
         print("\n[!] Options --auth-password/--auth-hash are mutually exclusive.")
+        sys.exit(0)
 
     return args
 
 
 def main():
     options = parseArgs()
+
+    vulns_db = VulnerabilitiesDB()
 
     # Parsing targets and ports
     targets = load_targets(options)

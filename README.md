@@ -15,7 +15,7 @@
 
  - [x] Multithreaded workers to search for Apache tomcat servers.
  - [x] Multiple target source possible:
-   - [x] Retreiving list of computers from a windows domain through an LDAP query to use them as a list of targets.
+   - [x] Retrieving list of computers from a Windows domain through an LDAP query to use them as a list of targets.
    - [x] Reading targets line by line from a file.
    - [x] Reading individual targets (IP/DNS/CIDR) from `-tt/--target` option. 
  - [x] Custom list of ports to test.
@@ -69,6 +69,10 @@ optional arguments:
     + [x] Accepting targets of type CIDR, DNS and IP
     + [x] Retreive list of targets from a file (`--targets-file`)
     + [x] Retreive list of targets in a Windows domain (`--auth-domain`, `--auth-user`, `--auth-password` / `--auth-hash`) through a LDAP query listing all computers of the domain.
+
+ - [x] Exporting results
+   - [x] In a JSON file.
+   - [x] In an Excel (XLSX) table.
 
 ## Contributing
 

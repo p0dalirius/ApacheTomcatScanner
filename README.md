@@ -13,7 +13,13 @@
 
 ## Features
 
- - [x] TBD
+ - [x] Multithreaded workers to search for Apache tomcat servers.
+ - [x] Multiple target source possible:
+   - [x] Retreiving list of computers from a windows domain through an LDAP query to use them as a list of targets.
+   - [x] Reading targets line by line from a file.
+   - [x] Reading individual targets (IP/DNS/CIDR) from `-tt/--target` option. 
+ - [x] Custom list of ports to test.
+ - [x] Tests for `/manager/html` access and default credentials.
 
 ## Usage
 

@@ -80,7 +80,7 @@ def try_default_credentials(target, port):
         return found_credentials
 
 
-def scan_worker(target, port, results, timeout=1):
+def scan_worker(target, port, results, vulns_db, timeout=1):
     DEBUG = False
     if DEBUG: print("[debug] scan_worker('%s', %d)" % (target, port))
     result = {"target": target}
@@ -100,6 +100,9 @@ def scan_worker(target, port, results, timeout=1):
         if len(credentials) != 0:
             for statuscode, creds in credentials:
                 str_found_creds.append("(username:\x1b[1;92m%s\x1b[0m password:\x1b[1;92m%s\x1b[0m)" % (creds["username"], creds["password"]))
+
+        # List of cves
+        cve_list = vulns_db.get_vulnerabilities_of_version_sorted_by_criticity(result["version"], colors=True)
 
         print("[>] [Apache Tomcat/\x1b[1;95m%s\x1b[0m] on \x1b[1;93m%s\x1b[0m:\x1b[1;93m%d\x1b[0m (manager:%s) %s" % (
                 result["version"],

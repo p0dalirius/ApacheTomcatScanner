@@ -109,7 +109,7 @@ def parseArgs():
 def main():
     options = parseArgs()
 
-    vulns_db = VulnerabilitiesDB()
+    vulns_db = VulnerabilitiesDB(verbose=options.verbose)
 
     # Parsing targets and ports
     targets = load_targets(options)
@@ -126,7 +126,7 @@ def main():
     with ThreadPoolExecutor(max_workers=min(options.threads, len(targets))) as tp:
         for target in targets:
             for port in ports:
-                tp.submit(scan_worker, target, port, results)
+                tp.submit(scan_worker, target, port, results, vulns_db)
     print("[+] All done!")
 
 

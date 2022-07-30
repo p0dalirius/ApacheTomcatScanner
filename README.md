@@ -20,6 +20,7 @@
    - [x] Reading individual targets (IP/DNS/CIDR) from `-tt/--target` option. 
  - [x] Custom list of ports to test.
  - [x] Tests for `/manager/html` access and default credentials.
+ - [x] List the CVEs of each version with the `--list-cves` option
 
 ## Usage
 
@@ -56,6 +57,10 @@ optional arguments:
 ## Example
 
 ![](./.github/example.png)
+
+You can also list the CVEs of each version with the `--list-cves` option:
+
+![](./.github/example_list_cves.png)
 
 ---
 

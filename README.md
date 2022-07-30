@@ -25,11 +25,10 @@
 ## Usage
 
 ```
-$ ./ApacheTomcatScanner.py  -h
-Apache Tomcat Scanner v1.2 - by @podalirius_
+$ ./ApacheTomcatScanner.py -h
+Apache Tomcat Scanner v1.3 - by @podalirius_
 
-usage: ApacheTomcatScanner.py [-h] [-v] [-T THREADS] [-PI PROXY_IP] [-PP PROXY_PORT] [-tf TARGETS_FILE] [-tt TARGET]
-                              [-tp TARGET_PORTS] [-ad AUTH_DOMAIN] [-au AUTH_USER] [-ap AUTH_PASSWORD]
+usage: ApacheTomcatScanner.py [-h] [-v] [-C] [-T THREADS] [-PI PROXY_IP] [-PP PROXY_PORT] [-rt REQUEST_TIMEOUT] [-tf TARGETS_FILE] [-tt TARGET] [-tp TARGET_PORTS] [-ad AUTH_DOMAIN] [-ai AUTH_DC_IP] [-au AUTH_USER] [-ap AUTH_PASSWORD]
                               [-ah AUTH_HASH]
 
 A python script to scan for Apache Tomcat server vulnerabilities.
@@ -37,11 +36,15 @@ A python script to scan for Apache Tomcat server vulnerabilities.
 optional arguments:
   -h, --help            show this help message and exit
   -v, --verbose         Verbose mode. (default: False)
+  -C, --list-cves       List CVE ids affecting each version found. (default: False)
   -T THREADS, --threads THREADS
                         Number of threads (default: 5)
 
   -PI PROXY_IP, --proxy-ip PROXY_IP
+                        Proxy IP.
   -PP PROXY_PORT, --proxy-port PROXY_PORT
+                        Proxy port
+  -rt REQUEST_TIMEOUT, --request-timeout REQUEST_TIMEOUT
 
   -tf TARGETS_FILE, --targets-file TARGETS_FILE
   -tt TARGET, --target TARGET
@@ -49,6 +52,7 @@ optional arguments:
   -tp TARGET_PORTS, --target-ports TARGET_PORTS
                         Target ports to scan top search for Apache Tomcat servers.
   -ad AUTH_DOMAIN, --auth-domain AUTH_DOMAIN
+  -ai AUTH_DC_IP, --auth-dc-ip AUTH_DC_IP
   -au AUTH_USER, --auth-user AUTH_USER
   -ap AUTH_PASSWORD, --auth-password AUTH_PASSWORD
   -ah AUTH_HASH, --auth-hash AUTH_HASH

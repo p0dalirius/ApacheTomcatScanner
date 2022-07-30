@@ -7,6 +7,7 @@
 import argparse
 import os
 from apachetomcatscanner.utils.scan import scan_worker
+from apachetomcatscanner.utils.targets import get_computers_from_domain
 from sectools.network.ip import is_ipv4_cidr, is_ipv4_addr, is_ipv6_addr, expand_cidr
 from concurrent.futures import ThreadPoolExecutor
 
@@ -23,6 +24,13 @@ def load_targets(options):
     if options.auth_domain is not None and options.auth_user is not None and (options.auth_password is not None or options.auth_hash is not None):
         if options.verbose:
             print("[debug] Loading targets from computers in the domain '%s'" % options.auth_domain)
+            targets = get_computers_from_domain(
+                auth_domain=options.auth_domain,
+                auth_dc_ip=options.auth_dc_ip,
+                auth_username=options.auth_user,
+                auth_password=options.auth_password,
+                auth_hashes=options.auth_hash
+            )
 
     # Loading targets line by line from a targets file
     if options.targets_file is not None:
@@ -75,6 +83,7 @@ def parseArgs():
     group_targets_source.add_argument("-tt", "--target", default=[], action='append', help='Target IP, FQDN or CIDR')
     group_targets_source.add_argument("-tp", "--target-ports", default="8080", help='Target ports to scan top search for Apache Tomcat servers.')
     group_targets_source.add_argument("-ad", "--auth-domain", default=None, help='')
+    group_targets_source.add_argument("-ai", "--auth-dc-ip", default=None, help='')
     group_targets_source.add_argument("-au", "--auth-user", default=None, help='')
     group_targets_source.add_argument("-ap", "--auth-password", default=None, help='')
     group_targets_source.add_argument("-ah", "--auth-hash", default=None, help='')

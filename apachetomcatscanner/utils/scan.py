@@ -41,7 +41,7 @@ def is_tomcat_manager_accessible(target, port, config):
             timeout=config.request_timeout,
             proxies=config.request_proxies
         )
-        if r.status_code in [200, 401]:
+        if r.status_code in [401]:
             return True
         else:
             return False
@@ -100,35 +100,36 @@ def scan_worker(target, port, results, vulns_db, config):
     result = {"target": target}
     if is_http_accessible(target, port, config):
         result["version"] = get_version_from_malformed_http_request(target, port, config)
-        config.debug("Found version %s" % result["version"])
+        if result["version"] is not None:
+            config.debug("Found version %s" % result["version"])
 
-        result["manager_accessible"] = is_tomcat_manager_accessible(target, port, config)
+            result["manager_accessible"] = is_tomcat_manager_accessible(target, port, config)
 
-        credentials = []
-        if result["manager_accessible"]:
-            config.debug("Manager is accessible")
-            # Test for default credentials
-            credentials = try_default_credentials(target, port, config)
+            credentials = []
+            if result["manager_accessible"]:
+                config.debug("Manager is accessible")
+                # Test for default credentials
+                credentials = try_default_credentials(target, port, config)
 
-        str_found_creds = []
-        if len(credentials) != 0:
-            for statuscode, creds in credentials:
-                str_found_creds.append("(username:\x1b[1;92m%s\x1b[0m password:\x1b[1;92m%s\x1b[0m)" % (creds["username"], creds["password"]))
+            str_found_creds = []
+            if len(credentials) != 0:
+                for statuscode, creds in credentials:
+                    str_found_creds.append("(username:\x1b[1;92m%s\x1b[0m password:\x1b[1;92m%s\x1b[0m)" % (creds["username"], creds["password"]))
 
-        # List of cves
-        cve_str = ""
-        if config.list_cves_mode == True:
-            cve_list = vulns_db.get_vulnerabilities_of_version_sorted_by_criticity(result["version"], colors=True, reverse=True)
-            if len(cve_list) != 0:
-                cve_str = "CVEs: %s" % ', '.join(cve_list)
+            # List of cves
+            cve_str = ""
+            if config.list_cves_mode == True:
+                cve_list = vulns_db.get_vulnerabilities_of_version_sorted_by_criticity(result["version"], colors=True, reverse=True)
+                if len(cve_list) != 0:
+                    cve_str = "CVEs: %s" % ', '.join(cve_list)
 
-        print("[>] [Apache Tomcat/\x1b[1;95m%s\x1b[0m] on \x1b[1;93m%s\x1b[0m:\x1b[1;93m%d\x1b[0m (manager:%s) %s %s\x1b[0m " % (
-                result["version"],
-                target,
-                port,
-                ("\x1b[1;92maccessible\x1b[0m" if result["manager_accessible"] else "\x1b[1;91mnot accessible\x1b[0m"),
-                ' '.join(str_found_creds),
-                cve_str
+            print("[>] [Apache Tomcat/\x1b[1;95m%s\x1b[0m] on \x1b[1;93m%s\x1b[0m:\x1b[1;93m%d\x1b[0m (manager:%s) %s %s\x1b[0m " % (
+                    result["version"],
+                    target,
+                    port,
+                    ("\x1b[1;92maccessible\x1b[0m" if result["manager_accessible"] else "\x1b[1;91mnot accessible\x1b[0m"),
+                    ' '.join(str_found_creds),
+                    cve_str
+                )
             )
-        )
 

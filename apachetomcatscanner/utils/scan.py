@@ -95,7 +95,7 @@ def try_default_credentials(target, port, config):
         return found_credentials
 
 
-def scan_worker(target, port, results, vulns_db, config):
+def scan_worker(target, port, reporter, vulns_db, config):
     config.debug("scan_worker('%s', %d, ...)" % (target, port))
     result = {"target": target}
     if is_http_accessible(target, port, config):
@@ -132,4 +132,18 @@ def scan_worker(target, port, results, vulns_db, config):
                     cve_str
                 )
             )
+
+            cve_list = vulns_db.get_vulnerabilities_of_version_sorted_by_criticity(result["version"], colors=False, reverse=True)
+            credentials_str = "username:%s\npassword:%s" % (credentials[0][1]["username"], credentials[0][1]["password"])
+            cve_str = ', '.join([cve["cve"]["id"] for cve in cve_list])
+
+            reporter.report_result(
+                target,
+                port,
+                result["version"],
+                result["manager_accessible"],
+                credentials_str,
+                cve_str
+            )
+
 

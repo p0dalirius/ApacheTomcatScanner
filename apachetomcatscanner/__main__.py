@@ -8,6 +8,7 @@ import argparse
 import os
 import sys
 
+from apachetomcatscanner.Reporter import Reporter
 from apachetomcatscanner.Config import Config
 from apachetomcatscanner.VulnerabilitiesDB import VulnerabilitiesDB
 from apachetomcatscanner.utils.scan import scan_worker
@@ -91,6 +92,9 @@ def parseArgs():
     parser.add_argument("-C", "--list-cves", default=False, action="store_true", help='List CVE ids affecting each version found. (default: False)')
     parser.add_argument("-T", "--threads", default=8, type=int, help='Number of threads (default: 5)')
 
+    parser.add_argument("--xlsx", default=None, type=str, help='Export results to XLSX')
+    parser.add_argument("--json", default=None, type=str, help='Export results to JSON')
+
     group_configuration = parser.add_argument_group()
     group_configuration.add_argument("-PI", "--proxy-ip", default=None, type=str, help='Proxy IP.')
     group_configuration.add_argument("-PP", "--proxy-port", default=None, type=int, help='Proxy port')
@@ -130,12 +134,14 @@ def main():
     config.set_request_proxies(options.proxy_ip, options.proxy_port)
     config.set_list_cves_mode(options.list_cves)
 
+    reporter = Reporter(config=config)
+
     vulns_db = VulnerabilitiesDB(config=config)
 
     # Parsing targets and ports
     targets = load_targets(options, config)
     ports = load_ports(options, config)
-    if (config.get_request_proxies().keys()) != 0:
+    if options.proxy_ip is not None and options.proxy_port is not None:
         print("[+] Targeting %d ports on %d targets through proxy %s:%d" % (len(ports), len(targets), options.proxy_ip, options.proxy_port))
     else:
         print("[+] Targeting %d ports on %d targets" % (len(ports), len(targets)))
@@ -143,12 +149,16 @@ def main():
     # Exploring targets
     if len(targets) != 0 and options.threads != 0:
         print("[+] Searching for Apache Tomcats servers on specified targets ...")
-        results = {}
         with ThreadPoolExecutor(max_workers=min(options.threads, len(targets))) as tp:
             for target in targets:
                 for port in ports:
-                    tp.submit(scan_worker, target, port, results, vulns_db, config)
+                    tp.submit(scan_worker, target, port, reporter, vulns_db, config)
         print("[+] All done!")
+
+    if options.xlsx is not None:
+        reporter.export_xlsx(options.xlsx)
+    if options.json is not None:
+        reporter.export_json(options.json)
 
 
 if __name__ == '__main__':

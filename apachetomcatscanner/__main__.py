@@ -135,7 +135,10 @@ def main():
     # Parsing targets and ports
     targets = load_targets(options, config)
     ports = load_ports(options, config)
-    print("[+] Targeting %d ports on %d targets" % (len(ports), len(targets)))
+    if (config.get_request_proxies().keys()) != 0:
+        print("[+] Targeting %d ports on %d targets through proxy %s:%d" % (len(ports), len(targets), options.proxy_ip, options.proxy_port))
+    else:
+        print("[+] Targeting %d ports on %d targets" % (len(ports), len(targets)))
 
     # Exploring targets
     if len(targets) != 0 and options.threads != 0:

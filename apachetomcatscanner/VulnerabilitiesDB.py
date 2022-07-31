@@ -14,17 +14,16 @@ class VulnerabilitiesDB(object):
     Documentation for class VulnerabilitiesDB
     """
 
-    def __init__(self, verbose=False):
+    def __init__(self, config):
         super(VulnerabilitiesDB, self).__init__()
-        self.verbose = verbose
+        self.config = config
         self.cves = {}
         self.versions_to_cves = {}
         self.load()
     
     def load(self):
         self.cves = {}
-        if self.verbose:
-            print("[debug] Loading CVEs from JSON database ...")
+        self.config.debug("Loading CVEs from JSON database ...")
         # Load all CVEs from JSON files
         for cve_json_file in glob.glob('%s/vulnerabilities/*/CVE-*.json' % os.path.dirname(__file__)):
             try:
@@ -37,8 +36,7 @@ class VulnerabilitiesDB(object):
                         self.cves[cve["cve"]["id"]] = cve
             except Exception as e:
                 pass
-        if self.verbose:
-            print("[debug] Loaded %d CVEs!" % len(self.cves.keys()))
+        self.config.debug("Loaded %d CVEs!" % len(self.cves.keys()))
 
         # Construct reverse lookup database from version to CVEs
         if len(self.cves.keys()) != 0:

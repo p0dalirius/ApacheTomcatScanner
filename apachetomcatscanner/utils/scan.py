@@ -19,19 +19,28 @@ def is_target_a_windows_domain_controller() -> bool:
     pass
 
 
-def is_http_accessible(target, port, timeout=1):
+def is_http_accessible(target, port, config):
     url = "http://%s:%d/" % (target, port)
     try:
-        r = requests.get(url, timeout=timeout)
+        r = requests.get(
+            url,
+            timeout=config.request_timeout,
+            proxies=config.request_proxies
+        )
         return True
     except Exception as e:
         return False
 
 
-def is_tomcat_manager_accessible(target, port, path="/manager/html", timeout=1):
+def is_tomcat_manager_accessible(target, port, config):
+    path = "/manager/html"
     url = "http://%s:%d%s" % (target, port, path)
     try:
-        r = requests.get(url, timeout=timeout)
+        r = requests.get(
+            url,
+            timeout=config.request_timeout,
+            proxies=config.request_proxies
+        )
         if r.status_code in [200, 401]:
             return True
         else:
@@ -40,10 +49,14 @@ def is_tomcat_manager_accessible(target, port, path="/manager/html", timeout=1):
         return False
 
 
-def get_version_from_malformed_http_request(target, port):
+def get_version_from_malformed_http_request(target, port, config):
     url = "http://%s:%d/{}" % (target, port)
     try:
-        r = requests.get(url)
+        r = requests.get(
+            url,
+            timeout=config.request_timeout,
+            proxies=config.request_proxies
+        )
     except Exception as e:
         return None
     if r.status_code in [400, 404, 500]:
@@ -55,7 +68,7 @@ def get_version_from_malformed_http_request(target, port):
             return version
 
 
-def try_default_credentials(target, port):
+def try_default_credentials(target, port, config):
     found_credentials = []
     url = "http://%s:%d/manager/html" % (target, port)
     try:
@@ -71,7 +84,9 @@ def try_default_credentials(target, port):
                 url,
                 headers={
                     "Authorization": "Basic " + base64.b64encode(auth_string).decode('utf-8')
-                }
+                },
+                timeout=config.request_timeout,
+                proxies=config.request_proxies
             )
             if r.status_code in [200, 403]:
                 found_credentials.append((r.status_code, credentials))
@@ -80,21 +95,20 @@ def try_default_credentials(target, port):
         return found_credentials
 
 
-def scan_worker(target, port, results, vulns_db, timeout=1, list_cves=False):
-    DEBUG = False
-    if DEBUG: print("[debug] scan_worker('%s', %d)" % (target, port))
+def scan_worker(target, port, results, vulns_db, config):
+    config.debug("scan_worker('%s', %d, ...)" % (target, port))
     result = {"target": target}
-    if is_http_accessible(target, port):
-        result["version"] = get_version_from_malformed_http_request(target, port)
-        if DEBUG: print("[debug] Found version %s" % result["version"])
+    if is_http_accessible(target, port, config):
+        result["version"] = get_version_from_malformed_http_request(target, port, config)
+        config.debug("Found version %s" % result["version"])
 
-        result["manager_accessible"] = is_tomcat_manager_accessible(target, port)
-        if DEBUG and result["manager_accessible"]: print("[debug] Manager is accessible")
+        result["manager_accessible"] = is_tomcat_manager_accessible(target, port, config)
 
         credentials = []
         if result["manager_accessible"]:
+            config.debug("Manager is accessible")
             # Test for default credentials
-            credentials = try_default_credentials(target, port)
+            credentials = try_default_credentials(target, port, config)
 
         str_found_creds = []
         if len(credentials) != 0:
@@ -103,7 +117,7 @@ def scan_worker(target, port, results, vulns_db, timeout=1, list_cves=False):
 
         # List of cves
         cve_str = ""
-        if list_cves == True:
+        if config.list_cves_mode == True:
             cve_list = vulns_db.get_vulnerabilities_of_version_sorted_by_criticity(result["version"], colors=True, reverse=True)
             if len(cve_list) != 0:
                 cve_str = "CVEs: %s" % ', '.join(cve_list)

@@ -8,10 +8,11 @@ import argparse
 import os
 import sys
 
+from apachetomcatscanner.Config import Config
 from apachetomcatscanner.VulnerabilitiesDB import VulnerabilitiesDB
 from apachetomcatscanner.utils.scan import scan_worker
 from apachetomcatscanner.utils.targets import get_computers_from_domain
-from sectools.network.ip import is_ipv4_cidr, is_ipv4_addr, is_ipv6_addr, expand_cidr
+from sectools.network.ip import is_ipv4_cidr, is_ipv4_addr, is_ipv6_addr, expand_cidr, expand_port_range
 from concurrent.futures import ThreadPoolExecutor
 
 
@@ -20,20 +21,20 @@ VERSION = "1.3"
 banner = """Apache Tomcat Scanner v%s - by @podalirius_\n""" % VERSION
 
 
-def load_targets(options):
+def load_targets(options, config):
     targets = []
 
     # Loading targets from domain computers
     if options.auth_domain is not None and options.auth_user is not None and (options.auth_password is not None or options.auth_hash is not None):
         if options.verbose:
             print("[debug] Loading targets from computers in the domain '%s'" % options.auth_domain)
-            targets = get_computers_from_domain(
-                auth_domain=options.auth_domain,
-                auth_dc_ip=options.auth_dc_ip,
-                auth_username=options.auth_user,
-                auth_password=options.auth_password,
-                auth_hashes=options.auth_hash
-            )
+        targets = get_computers_from_domain(
+            auth_domain=options.auth_domain,
+            auth_dc_ip=options.auth_dc_ip,
+            auth_username=options.auth_user,
+            auth_password=options.auth_password,
+            auth_hashes=options.auth_hash
+        )
 
     # Loading targets line by line from a targets file
     if options.targets_file is not None:
@@ -71,27 +72,39 @@ def load_targets(options):
     return final_targets
 
 
+def load_ports(options, config):
+    ports = []
+    if "," in options.target_ports:
+        for port in options.target_ports.split(','):
+            ports += expand_port_range(port.strip())
+    else:
+        ports = expand_port_range(options.target_ports.strip())
+    ports = sorted(list(set(ports)))
+    return ports
+
+
 def parseArgs():
     print(banner)
     parser = argparse.ArgumentParser(description="A python script to scan for Apache Tomcat server vulnerabilities.")
     parser.add_argument("-v", "--verbose", default=False, action="store_true", help='Verbose mode. (default: False)')
+    parser.add_argument("--debug", default=False, action="store_true", help='Debug mode, for huge verbosity. (default: False)')
     parser.add_argument("-C", "--list-cves", default=False, action="store_true", help='List CVE ids affecting each version found. (default: False)')
     parser.add_argument("-T", "--threads", default=8, type=int, help='Number of threads (default: 5)')
 
     group_configuration = parser.add_argument_group()
-    group_configuration.add_argument("-PI", "--proxy-ip", default=None, help='Proxy IP.')
-    group_configuration.add_argument("-PP", "--proxy-port", default=None, help='Proxy port')
+    group_configuration.add_argument("-PI", "--proxy-ip", default=None, type=str, help='Proxy IP.')
+    group_configuration.add_argument("-PP", "--proxy-port", default=None, type=int, help='Proxy port')
     group_configuration.add_argument("-rt", "--request-timeout", default=1, type=int, help='')
 
     group_targets_source = parser.add_argument_group()
-    group_targets_source.add_argument("-tf", "--targets-file", default=None, help='')
-    group_targets_source.add_argument("-tt", "--target", default=[], action='append', help='Target IP, FQDN or CIDR')
-    group_targets_source.add_argument("-tp", "--target-ports", default="8080", help='Target ports to scan top search for Apache Tomcat servers.')
-    group_targets_source.add_argument("-ad", "--auth-domain", default=None, help='')
-    group_targets_source.add_argument("-ai", "--auth-dc-ip", default=None, help='')
-    group_targets_source.add_argument("-au", "--auth-user", default=None, help='')
-    group_targets_source.add_argument("-ap", "--auth-password", default=None, help='')
-    group_targets_source.add_argument("-ah", "--auth-hash", default=None, help='')
+    group_targets_source.add_argument("-tf", "--targets-file", default=None, type=str, help='')
+    group_targets_source.add_argument("-tt", "--target", default=[], type=str, action='append', help='Target IP, FQDN or CIDR')
+    group_targets_source.add_argument("-tp", "--target-ports", default="8080", type=str, help='Target ports to scan top search for Apache Tomcat servers.')
+    group_targets_source.add_argument("-ad", "--auth-domain", default=None, type=str, help='')
+    group_targets_source.add_argument("-ai", "--auth-dc-ip", default=None, type=str, help='')
+    group_targets_source.add_argument("-au", "--auth-user", default=None, type=str, help='')
+    group_targets_source.add_argument("-ap", "--auth-password", default=None, type=str, help='')
+    group_targets_source.add_argument("-ah", "--auth-hash", default=None, type=str, help='')
 
     args = parser.parse_args()
 
@@ -111,26 +124,27 @@ def parseArgs():
 def main():
     options = parseArgs()
 
-    vulns_db = VulnerabilitiesDB(verbose=options.verbose)
+    config = Config()
+    config.set_debug_mode(options.debug)
+    config.set_request_timeout(options.request_timeout)
+    config.set_request_proxies(options.proxy_ip, options.proxy_port)
+    config.set_list_cves_mode(options.list_cves)
+
+    vulns_db = VulnerabilitiesDB(config=config)
 
     # Parsing targets and ports
-    targets = load_targets(options)
-    if "," in options.target_ports:
-        ports = [int(port.strip()) for port in options.target_ports.split(',')]
-        print("[+] Targeting %d ports on %d targets" % (len(ports), len(targets)))
-    else:
-        ports = [int(options.target_ports.strip())]
-        print("[+] Targeting %d port (%s) on %d targets" % (len(ports), ports[0], len(targets)))
+    targets = load_targets(options, config)
+    ports = load_ports(options, config)
+    print("[+] Targeting %d ports on %d targets" % (len(ports), len(targets)))
 
     # Exploring targets
-
     if len(targets) != 0 and options.threads != 0:
         print("[+] Searching for Apache Tomcats servers on specified targets ...")
         results = {}
         with ThreadPoolExecutor(max_workers=min(options.threads, len(targets))) as tp:
             for target in targets:
                 for port in ports:
-                    tp.submit(scan_worker, target, port, results, vulns_db, options.request_timeout, options.list_cves)
+                    tp.submit(scan_worker, target, port, results, vulns_db, config)
         print("[+] All done!")
 
 

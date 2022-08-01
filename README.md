@@ -22,6 +22,15 @@
  - [x] Tests for `/manager/html` access and default credentials.
  - [x] List the CVEs of each version with the `--list-cves` option
 
+
+## Installation
+
+You can now install it from pypi (latest version is <img alt="PyPI" src="https://img.shields.io/pypi/v/apachetomcatscanner">) with this command:
+
+```
+sudo python3 -m pip install apachetomcatscanner
+```
+
 ## Usage
 
 ```

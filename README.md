@@ -66,24 +66,6 @@ You can also list the CVEs of each version with the `--list-cves` option:
 
 ![](./.github/example_list_cves.png)
 
----
-
-## Development roadmap
-
- - [x] Core
-    + [x] Loading database in JSON format with references and affected versions and OSes of each vulnerability on Apache Tomcat
-    + [ ] Use a proxy with `--proxy-ip` and `--proxy-port`
-    + [ ] Set a timeout on HTTP request
-   
- - [x] Targets source
-    + [x] Accepting targets of type CIDR, DNS and IP
-    + [x] Retreive list of targets from a file (`--targets-file`)
-    + [x] Retreive list of targets in a Windows domain (`--auth-domain`, `--auth-user`, `--auth-password` / `--auth-hash`) through a LDAP query listing all computers of the domain.
-
- - [ ] Exporting results
-   - [ ] In a JSON file.
-   - [ ] In an Excel (XLSX) table.
-
 ## Contributing
 
 Pull requests are welcome. Feel free to open an issue if you want to add other features.

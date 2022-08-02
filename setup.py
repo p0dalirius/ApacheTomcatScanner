@@ -6,7 +6,7 @@
 
 import setuptools
 
-with open('requirements.txt', 'r', encoding='utf-8') as f:
+with open('README.md', 'r', encoding='utf-8') as f:
     long_description = f.read()
 
 with open('requirements.txt', 'r', encoding='utf-8') as f:
@@ -14,7 +14,7 @@ with open('requirements.txt', 'r', encoding='utf-8') as f:
 
 setuptools.setup(
     name="apachetomcatscanner",
-    version="2.1",
+    version="2.2",
     description="",
     url="https://github.com/p0dalirius/ApacheTomcatScanner",
     author="Podalirius",

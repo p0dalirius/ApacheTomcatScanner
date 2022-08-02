@@ -12,13 +12,13 @@ from apachetomcatscanner.Reporter import Reporter
 from apachetomcatscanner.Config import Config
 from apachetomcatscanner.VulnerabilitiesDB import VulnerabilitiesDB
 from apachetomcatscanner.utils.scan import scan_worker
-from apachetomcatscanner.utils.targets import get_computers_from_domain
+from sectools.windows.ldap import get_computers_from_domain
 from sectools.network.domains import is_fqdn
 from sectools.network.ip import is_ipv4_cidr, is_ipv4_addr, is_ipv6_addr, expand_cidr, expand_port_range
 from concurrent.futures import ThreadPoolExecutor
 
 
-VERSION = "2.1"
+VERSION = "2.2"
 
 banner = """Apache Tomcat Scanner v%s - by @podalirius_\n""" % VERSION
 

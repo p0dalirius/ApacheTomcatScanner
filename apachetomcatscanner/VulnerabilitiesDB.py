@@ -24,8 +24,11 @@ class VulnerabilitiesDB(object):
     def load(self):
         self.cves = {}
         self.config.debug("Loading CVEs from JSON database ...")
+
         # Load all CVEs from JSON files
-        for cve_json_file in glob.glob('%s/vulnerabilities/*/CVE-*.json' % os.path.dirname(__file__)):
+        path_to_json_files = os.path.sep.join(["%s", "data", "vulnerabilities", "*", "CVE-*.json"])
+
+        for cve_json_file in glob.glob(path_to_json_files):
             try:
                 f = open(cve_json_file, 'r')
                 cve = json.loads(f.read())

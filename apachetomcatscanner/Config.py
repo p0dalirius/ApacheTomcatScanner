@@ -4,6 +4,9 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 31 Jul 2022
 
+import json
+import os
+
 
 class Config(object):
     """
@@ -18,12 +21,24 @@ class Config(object):
     debug_mode = False
     verbose_mode = False
 
+    credentials = {}
+
     def __init__(self):
         super(Config, self).__init__()
+        self.__load_default_credentials()
 
     def debug(self, msg):
         if self.debug_mode:
             print("[debug]", msg)
+
+    def __load_default_credentials(self):
+        self.credentials = {}
+        path_to_creds = os.path.dirname(__file__) + os.path.sep + 'data' + os.path.sep + 'credentials.json'
+        print(path_to_creds)
+        f = open(path_to_creds, 'r')
+        self.credentials = json.loads(f.read())["credentials"]
+        f.close()
+        return None
 
     # Get / Set functions
 

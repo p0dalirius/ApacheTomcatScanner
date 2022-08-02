@@ -72,13 +72,7 @@ def try_default_credentials(target, port, config):
     found_credentials = []
     url = "http://%s:%d/manager/html" % (target, port)
     try:
-        couple_username_passwords = [
-            {"username": "admin", "password": "admin"},
-            {"username": "admin", "password": "tomcat"},
-            {"username": "tomcat", "password": "tomcat"},
-            {"username": "tomcat", "password": "s3cret"}
-        ]
-        for credentials in couple_username_passwords:
+        for credentials in config.credentials:
             auth_string = bytes(credentials["username"] + ':' + credentials["password"], 'utf-8')
             r = requests.post(
                 url,

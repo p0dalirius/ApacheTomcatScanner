@@ -1,2 +1,2 @@
-sectools
+sectools>=1.3
 xlsxwriter

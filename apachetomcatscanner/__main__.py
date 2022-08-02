@@ -27,10 +27,22 @@ def load_targets(options, config):
     targets = []
 
     # Loading targets from domain computers
-    if options.auth_domain is not None and options.auth_user is not None and (options.auth_password is not None or options.auth_hash is not None):
+    if options.auth_domain is not None and options.auth_user is not None and (options.auth_password is not None or options.auth_hash is not None) and options.server-only is None:
         if options.verbose:
             print("[debug] Loading targets from computers in the domain '%s'" % options.auth_domain)
         targets = get_computers_from_domain(
+            auth_domain=options.auth_domain,
+            auth_dc_ip=options.auth_dc_ip,
+            auth_username=options.auth_user,
+            auth_password=options.auth_password,
+            auth_hashes=options.auth_hash
+        )
+
+    # Loading targets from domain servers
+    if options.auth_domain is not None and options.auth_user is not None and (options.auth_password is not None or options.auth_hash is not None) and options.server-only is True:
+        if options.verbose:
+            print("[debug] Loading targets from servers in the domain '%s'" % options.auth_domain)
+        targets = get_servers_from_domain(
             auth_domain=options.auth_domain,
             auth_dc_ip=options.auth_dc_ip,
             auth_username=options.auth_user,

@@ -35,7 +35,7 @@ sudo python3 -m pip install apachetomcatscanner
 
 ```
 $ ./ApacheTomcatScanner.py -h
-Apache Tomcat Scanner v2.0 - by @podalirius_
+Apache Tomcat Scanner v2.1 - by @podalirius_
 
 usage: ApacheTomcatScanner.py [-h] [-v] [-C] [-T THREADS] [-PI PROXY_IP] [-PP PROXY_PORT] [-rt REQUEST_TIMEOUT] [-tf TARGETS_FILE] [-tt TARGET] [-tp TARGET_PORTS] [-ad AUTH_DOMAIN] [-ai AUTH_DC_IP] [-au AUTH_USER] [-ap AUTH_PASSWORD]
                               [-ah AUTH_HASH]

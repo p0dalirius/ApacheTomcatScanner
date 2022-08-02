@@ -13,11 +13,12 @@ from apachetomcatscanner.Config import Config
 from apachetomcatscanner.VulnerabilitiesDB import VulnerabilitiesDB
 from apachetomcatscanner.utils.scan import scan_worker
 from apachetomcatscanner.utils.targets import get_computers_from_domain
+from sectools.network.domains import is_fqdn
 from sectools.network.ip import is_ipv4_cidr, is_ipv4_addr, is_ipv6_addr, expand_cidr, expand_port_range
 from concurrent.futures import ThreadPoolExecutor
 
 
-VERSION = "1.3"
+VERSION = "2.1"
 
 banner = """Apache Tomcat Scanner v%s - by @podalirius_\n""" % VERSION
 
@@ -68,6 +69,8 @@ def load_targets(options, config):
             final_targets.append(target)
         elif is_ipv6_addr(target):
             final_targets.append(target)
+        elif is_fqdn(target):
+            final_targets.append(target)
 
     final_targets = sorted(list(set(final_targets)))
     return final_targets
@@ -101,14 +104,14 @@ def parseArgs():
     group_configuration.add_argument("-rt", "--request-timeout", default=1, type=int, help='')
 
     group_targets_source = parser.add_argument_group()
-    group_targets_source.add_argument("-tf", "--targets-file", default=None, type=str, help='')
+    group_targets_source.add_argument("-tf", "--targets-file", default=None, type=str, help='Path to file containing a line by line list of targets.')
     group_targets_source.add_argument("-tt", "--target", default=[], type=str, action='append', help='Target IP, FQDN or CIDR')
     group_targets_source.add_argument("-tp", "--target-ports", default="8080", type=str, help='Target ports to scan top search for Apache Tomcat servers.')
-    group_targets_source.add_argument("-ad", "--auth-domain", default=None, type=str, help='')
-    group_targets_source.add_argument("-ai", "--auth-dc-ip", default=None, type=str, help='')
-    group_targets_source.add_argument("-au", "--auth-user", default=None, type=str, help='')
-    group_targets_source.add_argument("-ap", "--auth-password", default=None, type=str, help='')
-    group_targets_source.add_argument("-ah", "--auth-hash", default=None, type=str, help='')
+    group_targets_source.add_argument("-ad", "--auth-domain", default=None, type=str, help='Windows domain to authenticate to.')
+    group_targets_source.add_argument("-ai", "--auth-dc-ip", default=None, type=str, help='IP of the domain controller.')
+    group_targets_source.add_argument("-au", "--auth-user", default=None, type=str, help='Username of the domain account.')
+    group_targets_source.add_argument("-ap", "--auth-password", default=None, type=str, help='Password of the domain account.')
+    group_targets_source.add_argument("-ah", "--auth-hash", default=None, type=str, help='LM:NT hashes to pass the hash for this user.')
 
     args = parser.parse_args()
 

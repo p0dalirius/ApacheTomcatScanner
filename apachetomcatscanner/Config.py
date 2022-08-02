@@ -34,7 +34,6 @@ class Config(object):
     def __load_default_credentials(self):
         self.credentials = {}
         path_to_creds = os.path.dirname(__file__) + os.path.sep + 'data' + os.path.sep + 'credentials.json'
-        print(path_to_creds)
         f = open(path_to_creds, 'r')
         self.credentials = json.loads(f.read())["credentials"]
         f.close()

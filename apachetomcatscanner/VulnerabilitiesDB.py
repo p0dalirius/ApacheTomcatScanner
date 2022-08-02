@@ -33,7 +33,6 @@ class VulnerabilitiesDB(object):
                 f = open(cve_json_file, 'r')
                 cve = json.loads(f.read())
                 f.close()
-
                 if "cve" in cve.keys():
                     if "id" in cve["cve"].keys():
                         self.cves[cve["cve"]["id"]] = cve

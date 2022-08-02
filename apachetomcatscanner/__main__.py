@@ -12,7 +12,7 @@ from apachetomcatscanner.Reporter import Reporter
 from apachetomcatscanner.Config import Config
 from apachetomcatscanner.VulnerabilitiesDB import VulnerabilitiesDB
 from apachetomcatscanner.utils.scan import scan_worker
-from sectools.windows.ldap import get_computers_from_domain
+from sectools.windows.ldap import get_computers_from_domain, get_servers_from_domain
 from sectools.network.domains import is_fqdn
 from sectools.network.ip import is_ipv4_cidr, is_ipv4_addr, is_ipv6_addr, expand_cidr, expand_port_range
 from concurrent.futures import ThreadPoolExecutor
@@ -27,10 +27,22 @@ def load_targets(options, config):
     targets = []
 
     # Loading targets from domain computers
-    if options.auth_domain is not None and options.auth_user is not None and (options.auth_password is not None or options.auth_hash is not None):
+    if options.auth_domain is not None and options.auth_user is not None and (options.auth_password is not None or options.auth_hash is not None) and options.servers_only is False:
         if options.verbose:
             print("[debug] Loading targets from computers in the domain '%s'" % options.auth_domain)
         targets = get_computers_from_domain(
+            auth_domain=options.auth_domain,
+            auth_dc_ip=options.auth_dc_ip,
+            auth_username=options.auth_user,
+            auth_password=options.auth_password,
+            auth_hashes=options.auth_hash
+        )
+
+    # Loading targets from domain servers
+    if options.auth_domain is not None and options.auth_user is not None and (options.auth_password is not None or options.auth_hash is not None) and options.servers_only is True:
+        if options.verbose:
+            print("[debug] Loading targets from servers in the domain '%s'" % options.auth_domain)
+        targets = get_servers_from_domain(
             auth_domain=options.auth_domain,
             auth_dc_ip=options.auth_dc_ip,
             auth_username=options.auth_user,
@@ -94,6 +106,7 @@ def parseArgs():
     parser.add_argument("--debug", default=False, action="store_true", help='Debug mode, for huge verbosity. (default: False)')
     parser.add_argument("-C", "--list-cves", default=False, action="store_true", help='List CVE ids affecting each version found. (default: False)')
     parser.add_argument("-T", "--threads", default=8, type=int, help='Number of threads (default: 5)')
+    parser.add_argument("-s", "--servers_only", default=False, action="store_true", help='If querying ActiveDirectory, only get servers and not all computer objects. (default: False)')
 
     parser.add_argument("--xlsx", default=None, type=str, help='Export results to XLSX')
     parser.add_argument("--json", default=None, type=str, help='Export results to JSON')

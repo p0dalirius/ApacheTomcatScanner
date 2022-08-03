@@ -50,8 +50,8 @@ optional arguments:
   -T THREADS, --threads THREADS
                         Number of threads (default: 5)
   -s, --servers_only    If querying ActiveDirectory, only get servers and not all computer objects. (default: False)
-  --only-http           Scan only with HTTPs scheme. (default: False, scanning with both HTTP and HTTPs)
-  --only-https          Scan only with HTTP scheme. (default: False, scanning with both HTTP and HTTPs)
+  --only-http           Scan only with HTTP scheme. (default: False, scanning with both HTTP and HTTPs)
+  --only-https          Scan only with HTTPs scheme. (default: False, scanning with both HTTP and HTTPs)
   --no-check-certificate
                         Do not check certificate. (default: False)
   --xlsx XLSX           Export results to XLSX

@@ -106,7 +106,7 @@ def parseArgs():
     parser.add_argument("--debug", default=False, action="store_true", help='Debug mode, for huge verbosity. (default: False)')
     parser.add_argument("-C", "--list-cves", default=False, action="store_true", help='List CVE ids affecting each version found. (default: False)')
     parser.add_argument("-T", "--threads", default=8, type=int, help='Number of threads (default: 5)')
-    parser.add_argument("-s", "--servers_only", default=False, action="store_true", help='If querying ActiveDirectory, only get servers and not all computer objects. (default: False)')
+    parser.add_argument("-s", "--servers-only", default=False, action="store_true", help='If querying ActiveDirectory, only get servers and not all computer objects. (default: False)')
 
     parser.add_argument("--only-http", default=False, action="store_true", help='Scan only with HTTP scheme. (default: False, scanning with both HTTP and HTTPs)')
     parser.add_argument("--only-https", default=False, action="store_true", help='Scan only with HTTPs scheme. (default: False, scanning with both HTTP and HTTPs)')

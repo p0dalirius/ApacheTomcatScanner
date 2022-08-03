@@ -18,7 +18,7 @@ from sectools.network.ip import is_ipv4_cidr, is_ipv4_addr, is_ipv6_addr, expand
 from concurrent.futures import ThreadPoolExecutor
 
 
-VERSION = "2.3.1"
+VERSION = "2.3.2"
 
 banner = """Apache Tomcat Scanner v%s - by @podalirius_\n""" % VERSION
 
@@ -108,6 +108,10 @@ def parseArgs():
     parser.add_argument("-T", "--threads", default=8, type=int, help='Number of threads (default: 5)')
     parser.add_argument("-s", "--servers_only", default=False, action="store_true", help='If querying ActiveDirectory, only get servers and not all computer objects. (default: False)')
 
+    parser.add_argument("--only-http", default=False, action="store_true", help='Scan only with HTTPs scheme. (default: False, scanning with both HTTP and HTTPs)')
+    parser.add_argument("--only-https", default=False, action="store_true", help='Scan only with HTTP scheme. (default: False, scanning with both HTTP and HTTPs)')
+    parser.add_argument("--no-check-certificate", default=False, action="store_true", help='Do not check certificate. (default: False)')
+
     parser.add_argument("--xlsx", default=None, type=str, help='Export results to XLSX')
     parser.add_argument("--json", default=None, type=str, help='Export results to JSON')
 
@@ -146,8 +150,10 @@ def main():
 
     config = Config()
     config.set_debug_mode(options.debug)
+    config.set_request_available_schemes(only_http=options.only_http, only_https=options.only_https)
     config.set_request_timeout(options.request_timeout)
     config.set_request_proxies(options.proxy_ip, options.proxy_port)
+    config.set_request_no_check_certificate(options.no_check_certificate)
     config.set_list_cves_mode(options.list_cves)
 
     reporter = Reporter(config=config)

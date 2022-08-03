@@ -15,6 +15,9 @@ class Config(object):
 
     request_timeout = 1
     request_proxies = {}
+    request_no_check_certificate = False
+
+    request_available_schemes = ["http"]
 
     list_cves_mode = False
 
@@ -41,11 +44,30 @@ class Config(object):
 
     # Get / Set functions
 
+    def get_request_available_schemes(self):
+        return self.request_available_schemes
+
+    def set_request_available_schemes(self, only_http, only_https):
+        self.request_available_schemes = []
+        if only_https:
+            self.request_available_schemes.append("https")
+        elif only_http:
+            self.request_available_schemes.append("http")
+        else:
+            self.request_available_schemes.append("http")
+            self.request_available_schemes.append("https")
+
     def get_request_timeout(self):
         return self.request_timeout
 
     def set_request_timeout(self, value):
         self.request_timeout = value
+
+    def get_request_no_check_certificate(self):
+        return self.request_no_check_certificate
+
+    def set_request_no_check_certificate(self, value):
+        self.request_no_check_certificate = value
 
     def get_list_cves_mode(self):
         return self.list_cves_mode

@@ -18,7 +18,7 @@ from sectools.network.ip import is_ipv4_cidr, is_ipv4_addr, is_ipv6_addr, expand
 from concurrent.futures import ThreadPoolExecutor
 
 
-VERSION = "2.3.2"
+VERSION = "2.3.3"
 
 banner = """Apache Tomcat Scanner v%s - by @podalirius_\n""" % VERSION
 
@@ -28,7 +28,7 @@ def load_targets(options, config):
 
     # Loading targets from domain computers
     if options.auth_domain is not None and options.auth_user is not None and (options.auth_password is not None or options.auth_hash is not None) and options.servers_only is False:
-        if options.verbose:
+        if options.debug:
             print("[debug] Loading targets from computers in the domain '%s'" % options.auth_domain)
         targets = get_computers_from_domain(
             auth_domain=options.auth_domain,
@@ -40,7 +40,7 @@ def load_targets(options, config):
 
     # Loading targets from domain servers
     if options.auth_domain is not None and options.auth_user is not None and (options.auth_password is not None or options.auth_hash is not None) and options.servers_only is True:
-        if options.verbose:
+        if options.debug:
             print("[debug] Loading targets from servers in the domain '%s'" % options.auth_domain)
         targets = get_servers_from_domain(
             auth_domain=options.auth_domain,
@@ -53,7 +53,7 @@ def load_targets(options, config):
     # Loading targets line by line from a targets file
     if options.targets_file is not None:
         if os.path.exists(options.targets_file):
-            if options.verbose:
+            if options.debug:
                 print("[debug] Loading targets line by line from targets file '%s'" % options.targets_file)
             f = open(options.targets_file, "r")
             for line in f.readlines():
@@ -64,7 +64,7 @@ def load_targets(options, config):
 
     # Loading targets from --target option
     if len(options.target) != 0:
-        if options.verbose:
+        if options.debug:
             print("[debug] Loading targets from --target options")
         for target in options.target:
             targets.append(target)
@@ -83,6 +83,9 @@ def load_targets(options, config):
             final_targets.append(target)
         elif is_fqdn(target):
             final_targets.append(target)
+        else:
+            if options.debug:
+                print("[debug] Target '%s' was not added." % target)
 
     final_targets = sorted(list(set(final_targets)))
     return final_targets
@@ -102,33 +105,34 @@ def load_ports(options, config):
 def parseArgs():
     print(banner)
     parser = argparse.ArgumentParser(description="A python script to scan for Apache Tomcat server vulnerabilities.")
-    parser.add_argument("-v", "--verbose", default=False, action="store_true", help='Verbose mode. (default: False)')
-    parser.add_argument("--debug", default=False, action="store_true", help='Debug mode, for huge verbosity. (default: False)')
-    parser.add_argument("-C", "--list-cves", default=False, action="store_true", help='List CVE ids affecting each version found. (default: False)')
-    parser.add_argument("-T", "--threads", default=8, type=int, help='Number of threads (default: 5)')
-    parser.add_argument("-s", "--servers-only", default=False, action="store_true", help='If querying ActiveDirectory, only get servers and not all computer objects. (default: False)')
+    parser.add_argument("-v", "--verbose", default=False, action="store_true", help="Verbose mode. (default: False)")
+    parser.add_argument("--debug", default=False, action="store_true", help="Debug mode, for huge verbosity. (default: False)")
+    parser.add_argument("-C", "--list-cves", default=False, action="store_true", help="List CVE ids affecting each version found. (default: False)")
+    parser.add_argument("-T", "--threads", default=8, type=int, help="Number of threads (default: 5)")
+    parser.add_argument("-s", "--servers-only", default=False, action="store_true", help="If querying ActiveDirectory, only get servers and not all computer objects. (default: False)")
 
-    parser.add_argument("--only-http", default=False, action="store_true", help='Scan only with HTTP scheme. (default: False, scanning with both HTTP and HTTPs)')
-    parser.add_argument("--only-https", default=False, action="store_true", help='Scan only with HTTPs scheme. (default: False, scanning with both HTTP and HTTPs)')
-    parser.add_argument("--no-check-certificate", default=False, action="store_true", help='Do not check certificate. (default: False)')
+    parser.add_argument("--only-http", default=False, action="store_true", help="Scan only with HTTP scheme. (default: False, scanning with both HTTP and HTTPs)")
+    parser.add_argument("--only-https", default=False, action="store_true", help="Scan only with HTTPs scheme. (default: False, scanning with both HTTP and HTTPs)")
+    parser.add_argument("--no-check-certificate", default=False, action="store_true", help="Do not check certificate. (default: False)")
 
-    parser.add_argument("--xlsx", default=None, type=str, help='Export results to XLSX')
-    parser.add_argument("--json", default=None, type=str, help='Export results to JSON')
+    group_export = parser.add_argument_group("Advanced configuration")
+    group_export.add_argument("--xlsx", default=None, type=str, help="Export results to XLSX")
+    group_export.add_argument("--json", default=None, type=str, help="Export results to JSON")
 
-    group_configuration = parser.add_argument_group()
-    group_configuration.add_argument("-PI", "--proxy-ip", default=None, type=str, help='Proxy IP.')
-    group_configuration.add_argument("-PP", "--proxy-port", default=None, type=int, help='Proxy port')
-    group_configuration.add_argument("-rt", "--request-timeout", default=1, type=int, help='')
+    group_configuration = parser.add_argument_group("Advanced configuration")
+    group_configuration.add_argument("-PI", "--proxy-ip", default=None, type=str, help="Proxy IP.")
+    group_configuration.add_argument("-PP", "--proxy-port", default=None, type=int, help="Proxy port")
+    group_configuration.add_argument("-rt", "--request-timeout", default=1, type=int, help="Set the timeout of HTTP requests.")
 
-    group_targets_source = parser.add_argument_group()
-    group_targets_source.add_argument("-tf", "--targets-file", default=None, type=str, help='Path to file containing a line by line list of targets.')
+    group_targets_source = parser.add_argument_group("Targets")
+    group_targets_source.add_argument("-tf", "--targets-file", default=None, type=str, help="Path to file containing a line by line list of targets.")
     group_targets_source.add_argument("-tt", "--target", default=[], type=str, action='append', help='Target IP, FQDN or CIDR')
-    group_targets_source.add_argument("-tp", "--target-ports", default="8080", type=str, help='Target ports to scan top search for Apache Tomcat servers.')
-    group_targets_source.add_argument("-ad", "--auth-domain", default=None, type=str, help='Windows domain to authenticate to.')
-    group_targets_source.add_argument("-ai", "--auth-dc-ip", default=None, type=str, help='IP of the domain controller.')
-    group_targets_source.add_argument("-au", "--auth-user", default=None, type=str, help='Username of the domain account.')
-    group_targets_source.add_argument("-ap", "--auth-password", default=None, type=str, help='Password of the domain account.')
-    group_targets_source.add_argument("-ah", "--auth-hash", default=None, type=str, help='LM:NT hashes to pass the hash for this user.')
+    group_targets_source.add_argument("-tp", "--target-ports", default="8080", type=str, help="Target ports to scan top search for Apache Tomcat servers.")
+    group_targets_source.add_argument("-ad", "--auth-domain", default=None, type=str, help="Windows domain to authenticate to.")
+    group_targets_source.add_argument("-ai", "--auth-dc-ip", default=None, type=str, help="IP of the domain controller.")
+    group_targets_source.add_argument("-au", "--auth-user", default=None, type=str, help="Username of the domain account.")
+    group_targets_source.add_argument("-ap", "--auth-password", default=None, type=str, help="Password of the domain account.")
+    group_targets_source.add_argument("-ah", "--auth-hash", default=None, type=str, help="LM:NT hashes to pass the hash for this user.")
 
     args = parser.parse_args()
 
@@ -137,7 +141,7 @@ def parseArgs():
         print("\n[!] No targets specified.")
         sys.exit(0)
 
-    if args.auth_password is not None and args.auth_hash is not None:
+    if (args.auth_password is not None) and (args.auth_hash is not None):
         parser.print_help()
         print("\n[!] Options --auth-password/--auth-hash are mutually exclusive.")
         sys.exit(0)

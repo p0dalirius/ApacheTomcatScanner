@@ -34,11 +34,11 @@ sudo python3 -m pip install apachetomcatscanner
 ## Usage
 
 ```
-$ ./ApacheTomcatScanner.py -h
-Apache Tomcat Scanner v2.3.2 - by @podalirius_
+Apache Tomcat Scanner v2.3.4 - by @podalirius_
 
-usage: ApacheTomcatScanner.py [-h] [-v] [--debug] [-C] [-T THREADS] [-s] [--only-http] [--only-https] [--no-check-certificate] [--xlsx XLSX] [--json JSON] [-PI PROXY_IP] [-PP PROXY_PORT] [-rt REQUEST_TIMEOUT] [-tf TARGETS_FILE]
-                              [-tt TARGET] [-tp TARGET_PORTS] [-ad AUTH_DOMAIN] [-ai AUTH_DC_IP] [-au AUTH_USER] [-ap AUTH_PASSWORD] [-ah AUTH_HASH]
+usage: ApacheTomcatScanner.py [-h] [-v] [--debug] [-C] [-T THREADS] [-s] [--only-http] [--only-https] [--no-check-certificate] [--export-xlsx EXPORT_XLSX] [--export-json EXPORT_JSON] [--export-sqlite EXPORT_SQLITE] [-PI PROXY_IP]
+                              [-PP PROXY_PORT] [-rt REQUEST_TIMEOUT] [--tomcat-username TOMCAT_USERNAME] [--tomcat-usernames-file TOMCAT_USERNAMES_FILE] [--tomcat-password TOMCAT_PASSWORD]
+                              [--tomcat-passwords-file TOMCAT_PASSWORDS_FILE] [-tf TARGETS_FILE] [-tt TARGET] [-tp TARGET_PORTS] [-ad AUTH_DOMAIN] [-ai AUTH_DC_IP] [-au AUTH_USER] [-ap AUTH_PASSWORD] [-ah AUTH_HASHES] [--ldaps]
 
 A python script to scan for Apache Tomcat server vulnerabilities.
 
@@ -54,15 +54,32 @@ optional arguments:
   --only-https          Scan only with HTTPs scheme. (default: False, scanning with both HTTP and HTTPs)
   --no-check-certificate
                         Do not check certificate. (default: False)
-  --xlsx XLSX           Export results to XLSX
-  --json JSON           Export results to JSON
 
+Export results:
+  --export-xlsx EXPORT_XLSX
+                        Output XLSX file to store the results in.
+  --export-json EXPORT_JSON
+                        Output JSON file to store the results in.
+  --export-sqlite EXPORT_SQLITE
+                        Output SQLITE3 file to store the results in.
+
+Advanced configuration:
   -PI PROXY_IP, --proxy-ip PROXY_IP
                         Proxy IP.
   -PP PROXY_PORT, --proxy-port PROXY_PORT
                         Proxy port
   -rt REQUEST_TIMEOUT, --request-timeout REQUEST_TIMEOUT
+                        Set the timeout of HTTP requests.
+  --tomcat-username TOMCAT_USERNAME
+                        Set the timeout of HTTP requests.
+  --tomcat-usernames-file TOMCAT_USERNAMES_FILE
+                        Set the timeout of HTTP requests.
+  --tomcat-password TOMCAT_PASSWORD
+                        Set the timeout of HTTP requests.
+  --tomcat-passwords-file TOMCAT_PASSWORDS_FILE
+                        Set the timeout of HTTP requests.
 
+Targets:
   -tf TARGETS_FILE, --targets-file TARGETS_FILE
                         Path to file containing a line by line list of targets.
   -tt TARGET, --target TARGET
@@ -77,8 +94,10 @@ optional arguments:
                         Username of the domain account.
   -ap AUTH_PASSWORD, --auth-password AUTH_PASSWORD
                         Password of the domain account.
-  -ah AUTH_HASH, --auth-hash AUTH_HASH
+  -ah AUTH_HASHES, --auth-hashes AUTH_HASHES
                         LM:NT hashes to pass the hash for this user.
+  --ldaps               Use LDAPS (default: False)
+
 ```
 
 ## Example

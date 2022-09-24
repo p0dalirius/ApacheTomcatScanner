@@ -6,6 +6,7 @@
 
 import json
 import os.path
+import sqlite3
 import xlsxwriter
 
 
@@ -34,10 +35,14 @@ class Reporter(object):
         self.data[computer_ip][computer_port]["cves"] = cves
 
     def export_xlsx(self, path_to_file):
-        outdir = os.path.dirname(path_to_file)
-        if len(outdir) != 0:
-            if not os.path.exists(outdir):
-                os.makedirs(os.path.dirname(path_to_file), exist_ok=True)
+        basepath = os.path.dirname(path_to_file)
+        filename = os.path.basename(path_to_file)
+        if basepath not in [".", ""]:
+            if not os.path.exists(basepath):
+                os.makedirs(basepath)
+            path_to_file = basepath + os.path.sep + filename
+        else:
+            path_to_file = filename
 
         workbook = xlsxwriter.Workbook(path_to_file)
         worksheet = workbook.add_worksheet()
@@ -67,10 +72,42 @@ class Reporter(object):
         workbook.close()
 
     def export_json(self, path_to_file):
-        outdir = os.path.dirname(path_to_file)
-        if len(outdir) != 0:
-            if not os.path.exists(outdir):
-                os.makedirs(os.path.dirname(path_to_file), exist_ok=True)
+        basepath = os.path.dirname(path_to_file)
+        filename = os.path.basename(path_to_file)
+        if basepath not in [".", ""]:
+            if not os.path.exists(basepath):
+                os.makedirs(basepath)
+            path_to_file = basepath + os.path.sep + filename
+        else:
+            path_to_file = filename
         f = open(path_to_file, 'w')
         f.write(json.dumps(self.data, indent=4))
         f.close()
+
+    def export_sqlite(self, path_to_file):
+        basepath = os.path.dirname(path_to_file)
+        filename = os.path.basename(path_to_file)
+        if basepath not in [".", ""]:
+            if not os.path.exists(basepath):
+                os.makedirs(basepath)
+            path_to_file = basepath + os.path.sep + filename
+        else:
+            path_to_file = filename
+
+        conn = sqlite3.connect(path_to_file)
+        cursor = conn.cursor()
+        cursor.execute("CREATE TABLE IF NOT EXISTS results(computer_ip VARCHAR(255), computer_port INTEGER, tomcat_version VARCHAR(255), manager_accessible VARCHAR(255), default_credentials VARCHAR(255), cves INTEGER);")
+        for computername in self.data.keys():
+            computer = self.data[computername]
+            for port in computer.keys():
+                cursor.execute("INSERT INTO results VALUES (?, ?, ?, ?, ?, ?)", (
+                        computer[port]["computer_ip"],
+                        computer[port]["computer_port"],
+                        computer[port]["tomcat_version"],
+                        str(computer[port]["manager_accessible"]).upper(),
+                        computer[port]["default_credentials"],
+                        computer[port]["cves"]
+                    )
+                )
+        conn.commit()
+        conn.close()

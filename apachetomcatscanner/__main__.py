@@ -18,7 +18,7 @@ from sectools.network.ip import is_ipv4_cidr, is_ipv4_addr, is_ipv6_addr, expand
 from concurrent.futures import ThreadPoolExecutor
 
 
-VERSION = "2.3.3"
+VERSION = "2.3.4"
 
 banner = """Apache Tomcat Scanner v%s - by @podalirius_\n""" % VERSION
 
@@ -115,9 +115,10 @@ def parseArgs():
     parser.add_argument("--only-https", default=False, action="store_true", help="Scan only with HTTPs scheme. (default: False, scanning with both HTTP and HTTPs)")
     parser.add_argument("--no-check-certificate", default=False, action="store_true", help="Do not check certificate. (default: False)")
 
-    group_export = parser.add_argument_group("Advanced configuration")
-    group_export.add_argument("--xlsx", default=None, type=str, help="Export results to XLSX")
-    group_export.add_argument("--json", default=None, type=str, help="Export results to JSON")
+    group_export = parser.add_argument_group("Export results")
+    group_export.add_argument("--export-xlsx", dest="export_xlsx", type=str, default=None, required=False, help="Output XLSX file to store the results in.")
+    group_export.add_argument("--export-json", dest="export_json", type=str, default=None, required=False, help="Output JSON file to store the results in.")
+    group_export.add_argument("--export-sqlite", dest="export_sqlite", type=str, default=None, required=False, help="Output SQLITE3 file to store the results in.")
 
     group_configuration = parser.add_argument_group("Advanced configuration")
     group_configuration.add_argument("-PI", "--proxy-ip", default=None, type=str, help="Proxy IP.")
@@ -181,10 +182,14 @@ def main():
                     tp.submit(scan_worker, target, port, reporter, vulns_db, config)
         print("[+] All done!")
 
-    if options.xlsx is not None:
-        reporter.export_xlsx(options.xlsx)
-    if options.json is not None:
-        reporter.export_json(options.json)
+    if options.export_xlsx is not None:
+        reporter.export_xlsx(options.export_xlsx)
+
+    if options.export_json is not None:
+        reporter.export_json(options.export_json)
+
+    if options.export_sqlite is not None:
+        reporter.export_sqlite(options.export_sqlite)
 
 
 if __name__ == '__main__':

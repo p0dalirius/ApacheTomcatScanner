@@ -12,13 +12,13 @@ from apachetomcatscanner.Reporter import Reporter
 from apachetomcatscanner.Config import Config
 from apachetomcatscanner.VulnerabilitiesDB import VulnerabilitiesDB
 from apachetomcatscanner.utils.scan import scan_worker
-from sectools.windows.ldap import get_computers_from_domain, get_servers_from_domain
+from sectools.windows.ldap import get_computers_from_domain, get_servers_from_domain, get_subnets
 from sectools.network.domains import is_fqdn
 from sectools.network.ip import is_ipv4_cidr, is_ipv4_addr, is_ipv6_addr, expand_cidr, expand_port_range
 from concurrent.futures import ThreadPoolExecutor
 
 
-VERSION = "2.3.4"
+VERSION = "2.3.5"
 
 banner = """Apache Tomcat Scanner v%s - by @podalirius_\n""" % VERSION
 
@@ -27,29 +27,45 @@ def load_targets(options, config):
     targets = []
 
     # Loading targets from domain computers
-    if options.auth_domain is not None and options.auth_user is not None and (options.auth_password is not None or options.auth_hashes is not None) and options.servers_only is False:
+    if options.auth_dc_ip is not None and options.auth_user is not None and (options.auth_password is not None or options.auth_hashes is not None) and options.servers_only is False:
         if options.debug:
             print("[debug] Loading targets from computers in the domain '%s'" % options.auth_domain)
-        targets = get_computers_from_domain(
+        targets += get_computers_from_domain(
             auth_domain=options.auth_domain,
             auth_dc_ip=options.auth_dc_ip,
             auth_username=options.auth_user,
             auth_password=options.auth_password,
             auth_hashes=options.auth_hashes,
-            use_ldaps=options.ldaps
+            use_ldaps=options.ldaps,
+            __print=True
         )
 
     # Loading targets from domain servers
-    if options.auth_domain is not None and options.auth_user is not None and (options.auth_password is not None or options.auth_hashes is not None) and options.servers_only is True:
+    if options.auth_dc_ip is not None and options.auth_user is not None and (options.auth_password is not None or options.auth_hashes is not None) and options.servers_only is True:
         if options.debug:
             print("[debug] Loading targets from servers in the domain '%s'" % options.auth_domain)
-        targets = get_servers_from_domain(
+        targets += get_servers_from_domain(
             auth_domain=options.auth_domain,
             auth_dc_ip=options.auth_dc_ip,
             auth_username=options.auth_user,
             auth_password=options.auth_password,
             auth_hashes=options.auth_hashes,
-            use_ldaps=options.ldaps
+            use_ldaps=options.ldaps,
+            __print=True
+        )
+
+    # Loading targets from subnetworks of the domain
+    if options.auth_dc_ip is not None and options.auth_user is not None and (options.auth_password is not None or options.auth_hashes is not None):
+        if options.debug:
+            print("[debug] Loading targets from servers in the domain '%s'" % options.auth_domain)
+        targets += get_subnets(
+            auth_domain=options.auth_domain,
+            auth_dc_ip=options.auth_dc_ip,
+            auth_username=options.auth_user,
+            auth_password=options.auth_password,
+            auth_hashes=options.auth_hashes,
+            use_ldaps=options.ldaps,
+            __print=True
         )
 
     # Loading targets line by line from a targets file
@@ -64,7 +80,7 @@ def load_targets(options, config):
         else:
             print("[!] Could not open targets file '%s'" % options.targets_file)
 
-    # Loading targets from --target option
+    # Loading targets from a single --target option
     if len(options.target) != 0:
         if options.debug:
             print("[debug] Loading targets from --target options")
@@ -73,6 +89,8 @@ def load_targets(options, config):
 
     # Sort uniq on targets list
     targets = sorted(list(set(targets)))
+
+    print(targets)
 
     final_targets = []
     # Parsing target to filter IP/DNS/CIDR
@@ -135,16 +153,17 @@ def parseArgs():
     group_targets_source.add_argument("-tf", "--targets-file", default=None, type=str, help="Path to file containing a line by line list of targets.")
     group_targets_source.add_argument("-tt", "--target", default=[], type=str, action='append', help="Target IP, FQDN or CIDR")
     group_targets_source.add_argument("-tp", "--target-ports", default="80,443,8080", type=str, help="Target ports to scan top search for Apache Tomcat servers.")
-    group_targets_source.add_argument("-ad", "--auth-domain", default=None, type=str, help="Windows domain to authenticate to.")
+    group_targets_source.add_argument("-ad", "--auth-domain", default="", type=str, help="Windows domain to authenticate to.")
     group_targets_source.add_argument("-ai", "--auth-dc-ip", default=None, type=str, help="IP of the domain controller.")
     group_targets_source.add_argument("-au", "--auth-user", default=None, type=str, help="Username of the domain account.")
     group_targets_source.add_argument("-ap", "--auth-password", default=None, type=str, help="Password of the domain account.")
     group_targets_source.add_argument("-ah", "--auth-hashes", default=None, type=str, help="LM:NT hashes to pass the hash for this user.")
     group_targets_source.add_argument("--ldaps", default=False, action="store_true", help="Use LDAPS (default: False)")
+    group_targets_source.add_argument("--subnets", default=False, action="store_true", help="Get all subnets from the domain and use them as targets (default: False)")
 
     args = parser.parse_args()
 
-    if (args.targets_file is None) and (len(args.target) == 0) and (args.auth_domain is None and args.auth_user is None and (args.auth_password is None or args.auth_hashes is None)):
+    if (args.targets_file is None) and (len(args.target) == 0) and (args.auth_user is None and (args.auth_password is None or args.auth_hashes is None)):
         parser.print_help()
         print("\n[!] No targets specified.")
         sys.exit(0)
@@ -152,6 +171,11 @@ def parseArgs():
     if (args.auth_password is not None) and (args.auth_hashes is not None):
         parser.print_help()
         print("\n[!] Options --auth-password/--auth-hashes are mutually exclusive.")
+        sys.exit(0)
+
+    if (args.auth_dc_ip is None) and (args.auth_user is not None and (args.auth_password is not None or args.auth_hashes is not None)):
+        parser.print_help()
+        print("\n[!] Option --auth-dc-ip is required when using --auth-user, --auth-password, --auth-hashes, --auth-domain")
         sys.exit(0)
 
     return args
@@ -177,28 +201,34 @@ def main():
     # Parsing targets and ports
     targets = load_targets(options, config)
     ports = load_ports(options, config)
-    if options.proxy_ip is not None and options.proxy_port is not None:
-        print("[+] Targeting %d ports on %d targets through proxy %s:%d" % (len(ports), len(targets), options.proxy_ip, options.proxy_port))
+    if len(targets) != 0:
+        if len(ports) != 0:
+            if options.proxy_ip is not None and options.proxy_port is not None:
+                print("[+] Targeting %d ports on %d targets through proxy %s:%d" % (len(ports), len(targets), options.proxy_ip, options.proxy_port))
+            else:
+                print("[+] Targeting %d ports on %d targets" % (len(ports), len(targets)))
+
+            # Exploring targets
+            if len(targets) != 0 and options.threads != 0:
+                print("[+] Searching for Apache Tomcats servers on specified targets ...")
+                with ThreadPoolExecutor(max_workers=min(options.threads, len(targets))) as tp:
+                    for target in targets:
+                        for port in ports:
+                            tp.submit(scan_worker, target, port, reporter, vulns_db, config)
+                print("[+] All done!")
+
+            if options.export_xlsx is not None:
+                reporter.export_xlsx(options.export_xlsx)
+
+            if options.export_json is not None:
+                reporter.export_json(options.export_json)
+
+            if options.export_sqlite is not None:
+                reporter.export_sqlite(options.export_sqlite)
+        else:
+            print("[!] Cannot start scan: no ports loaded.")
     else:
-        print("[+] Targeting %d ports on %d targets" % (len(ports), len(targets)))
-
-    # Exploring targets
-    if len(targets) != 0 and options.threads != 0:
-        print("[+] Searching for Apache Tomcats servers on specified targets ...")
-        with ThreadPoolExecutor(max_workers=min(options.threads, len(targets))) as tp:
-            for target in targets:
-                for port in ports:
-                    tp.submit(scan_worker, target, port, reporter, vulns_db, config)
-        print("[+] All done!")
-
-    if options.export_xlsx is not None:
-        reporter.export_xlsx(options.export_xlsx)
-
-    if options.export_json is not None:
-        reporter.export_json(options.export_json)
-
-    if options.export_sqlite is not None:
-        reporter.export_sqlite(options.export_sqlite)
+        print("[!] Cannot start scan: no targets loaded.")
 
 
 if __name__ == '__main__':

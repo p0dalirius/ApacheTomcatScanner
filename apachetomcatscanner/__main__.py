@@ -124,11 +124,15 @@ def parseArgs():
     group_configuration.add_argument("-PI", "--proxy-ip", default=None, type=str, help="Proxy IP.")
     group_configuration.add_argument("-PP", "--proxy-port", default=None, type=int, help="Proxy port")
     group_configuration.add_argument("-rt", "--request-timeout", default=1, type=int, help="Set the timeout of HTTP requests.")
+    group_configuration.add_argument("--tomcat-username", default=None, help="Set the timeout of HTTP requests.")
+    group_configuration.add_argument("--tomcat-usernames-file", default=None, help="Set the timeout of HTTP requests.")
+    group_configuration.add_argument("--tomcat-password", default=None, help="Set the timeout of HTTP requests.")
+    group_configuration.add_argument("--tomcat-passwords-file", default=None, help="Set the timeout of HTTP requests.")
 
     group_targets_source = parser.add_argument_group("Targets")
     group_targets_source.add_argument("-tf", "--targets-file", default=None, type=str, help="Path to file containing a line by line list of targets.")
-    group_targets_source.add_argument("-tt", "--target", default=[], type=str, action='append', help='Target IP, FQDN or CIDR')
-    group_targets_source.add_argument("-tp", "--target-ports", default="8080", type=str, help="Target ports to scan top search for Apache Tomcat servers.")
+    group_targets_source.add_argument("-tt", "--target", default=[], type=str, action='append', help="Target IP, FQDN or CIDR")
+    group_targets_source.add_argument("-tp", "--target-ports", default="80,443,8080", type=str, help="Target ports to scan top search for Apache Tomcat servers.")
     group_targets_source.add_argument("-ad", "--auth-domain", default=None, type=str, help="Windows domain to authenticate to.")
     group_targets_source.add_argument("-ai", "--auth-dc-ip", default=None, type=str, help="IP of the domain controller.")
     group_targets_source.add_argument("-au", "--auth-user", default=None, type=str, help="Username of the domain account.")
@@ -160,6 +164,8 @@ def main():
     config.set_request_proxies(options.proxy_ip, options.proxy_port)
     config.set_request_no_check_certificate(options.no_check_certificate)
     config.set_list_cves_mode(options.list_cves)
+
+    config.load_credentials_from_options(options.tomcat_username, options.tomcat_password, options.tomcat_usernames_file, options.tomcat_passwords_file)
 
     reporter = Reporter(config=config)
 

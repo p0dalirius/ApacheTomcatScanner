@@ -42,6 +42,39 @@ class Config(object):
         f.close()
         return None
 
+    def load_credentials_from_options(self, username, password, usernames_file, passwords_file):
+        usernames = []
+        passwords = []
+
+        if username is not None:
+            usernames.append(username)
+        if usernames_file is not None:
+            f = open(usernames_file, "r")
+            for line in f.readlines():
+                usernames.append(line.strip())
+            f.close()
+
+        if password is not None:
+            passwords.append(password)
+        if passwords_file is not None:
+            f = open(passwords_file, "r")
+            for line in f.readlines():
+                passwords.append(line.strip())
+            f.close()
+
+        if len(usernames) != 0 and len(passwords) != 0:
+            self.credentials = {"credentials": []}
+            for username in usernames:
+                for password in passwords:
+                    self.credentials["credentials"].append({
+                        "username": username,
+                        "password": password,
+                        "description": ""
+                    })
+            return True
+        else:
+            return False
+
     # Get / Set functions
 
     def get_request_available_schemes(self):

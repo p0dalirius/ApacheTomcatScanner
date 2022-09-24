@@ -27,7 +27,7 @@ def load_targets(options, config):
     targets = []
 
     # Loading targets from domain computers
-    if options.auth_domain is not None and options.auth_user is not None and (options.auth_password is not None or options.auth_hash is not None) and options.servers_only is False:
+    if options.auth_domain is not None and options.auth_user is not None and (options.auth_password is not None or options.auth_hashes is not None) and options.servers_only is False:
         if options.debug:
             print("[debug] Loading targets from computers in the domain '%s'" % options.auth_domain)
         targets = get_computers_from_domain(
@@ -35,11 +35,12 @@ def load_targets(options, config):
             auth_dc_ip=options.auth_dc_ip,
             auth_username=options.auth_user,
             auth_password=options.auth_password,
-            auth_hashes=options.auth_hash
+            auth_hashes=options.auth_hashes,
+            use_ldaps=options.ldaps
         )
 
     # Loading targets from domain servers
-    if options.auth_domain is not None and options.auth_user is not None and (options.auth_password is not None or options.auth_hash is not None) and options.servers_only is True:
+    if options.auth_domain is not None and options.auth_user is not None and (options.auth_password is not None or options.auth_hashes is not None) and options.servers_only is True:
         if options.debug:
             print("[debug] Loading targets from servers in the domain '%s'" % options.auth_domain)
         targets = get_servers_from_domain(
@@ -47,7 +48,8 @@ def load_targets(options, config):
             auth_dc_ip=options.auth_dc_ip,
             auth_username=options.auth_user,
             auth_password=options.auth_password,
-            auth_hashes=options.auth_hash
+            auth_hashes=options.auth_hashes,
+            use_ldaps=options.ldaps
         )
 
     # Loading targets line by line from a targets file
@@ -137,18 +139,19 @@ def parseArgs():
     group_targets_source.add_argument("-ai", "--auth-dc-ip", default=None, type=str, help="IP of the domain controller.")
     group_targets_source.add_argument("-au", "--auth-user", default=None, type=str, help="Username of the domain account.")
     group_targets_source.add_argument("-ap", "--auth-password", default=None, type=str, help="Password of the domain account.")
-    group_targets_source.add_argument("-ah", "--auth-hash", default=None, type=str, help="LM:NT hashes to pass the hash for this user.")
+    group_targets_source.add_argument("-ah", "--auth-hashes", default=None, type=str, help="LM:NT hashes to pass the hash for this user.")
+    group_targets_source.add_argument("--ldaps", default=False, action="store_true", help="Use LDAPS (default: False)")
 
     args = parser.parse_args()
 
-    if (args.targets_file is None) and (len(args.target) == 0) and (args.auth_domain is None and args.auth_user is None and (args.auth_password is None or args.auth_hash is None)):
+    if (args.targets_file is None) and (len(args.target) == 0) and (args.auth_domain is None and args.auth_user is None and (args.auth_password is None or args.auth_hashes is None)):
         parser.print_help()
         print("\n[!] No targets specified.")
         sys.exit(0)
 
-    if (args.auth_password is not None) and (args.auth_hash is not None):
+    if (args.auth_password is not None) and (args.auth_hashes is not None):
         parser.print_help()
-        print("\n[!] Options --auth-password/--auth-hash are mutually exclusive.")
+        print("\n[!] Options --auth-password/--auth-hashes are mutually exclusive.")
         sys.exit(0)
 
     return args

@@ -14,18 +14,19 @@
 ## Features
 
  - [x] Multithreaded workers to search for Apache tomcat servers.
- - [x] Multiple target source possible:
-   - [x] Retrieving list of computers from a Windows domain through an LDAP query to use them as a list of targets.
-   - [x] Reading targets line by line from a file.
-   - [x] Reading individual targets (IP/DNS/CIDR) from `-tt/--target` option. 
+ - [x] Multiple target sources accepted:
+    + [x] Retrieving list of computers from a Windows domain through an LDAP query to use them as a list of targets.
+    + [x] Reading targets line by line from a file.
+    + [x] Reading individual targets (IP/DNS/CIDR) from `-tt/--target` option. 
  - [x] Custom list of ports to test.
- - [x] Tests for `/manager/html` access and default credentials.
+ - [x] Tests for `/manager/html` accessibility.
+ - [x] Tests for default credentials to access the Tomcat Manager.
  - [x] List the CVEs of each version with the `--list-cves` option
 
 
 ## Installation
 
-You can now install it from pypi (latest version is <img alt="PyPI" src="https://img.shields.io/pypi/v/apachetomcatscanner">) with this command:
+You can now install it from PyPI (latest version is <img alt="PyPI" src="https://img.shields.io/pypi/v/apachetomcatscanner">) with this command:
 
 ```
 sudo python3 -m pip install apachetomcatscanner
@@ -34,15 +35,18 @@ sudo python3 -m pip install apachetomcatscanner
 ## Usage
 
 ```
-Apache Tomcat Scanner v2.3.4 - by @podalirius_
+$ ./ApacheTomcatScanner.py -h
+Apache Tomcat Scanner v2.3.5 - by @podalirius_
 
-usage: ApacheTomcatScanner.py [-h] [-v] [--debug] [-C] [-T THREADS] [-s] [--only-http] [--only-https] [--no-check-certificate] [--export-xlsx EXPORT_XLSX] [--export-json EXPORT_JSON] [--export-sqlite EXPORT_SQLITE] [-PI PROXY_IP]
-                              [-PP PROXY_PORT] [-rt REQUEST_TIMEOUT] [--tomcat-username TOMCAT_USERNAME] [--tomcat-usernames-file TOMCAT_USERNAMES_FILE] [--tomcat-password TOMCAT_PASSWORD]
-                              [--tomcat-passwords-file TOMCAT_PASSWORDS_FILE] [-tf TARGETS_FILE] [-tt TARGET] [-tp TARGET_PORTS] [-ad AUTH_DOMAIN] [-ai AUTH_DC_IP] [-au AUTH_USER] [-ap AUTH_PASSWORD] [-ah AUTH_HASHES] [--ldaps]
+usage: ApacheTomcatScanner.py [-h] [-v] [--debug] [-C] [-T THREADS] [-s] [--only-http] [--only-https] [--no-check-certificate] [--export-xlsx EXPORT_XLSX]
+                              [--export-json EXPORT_JSON] [--export-sqlite EXPORT_SQLITE] [-PI PROXY_IP] [-PP PROXY_PORT] [-rt REQUEST_TIMEOUT]
+                              [--tomcat-username TOMCAT_USERNAME] [--tomcat-usernames-file TOMCAT_USERNAMES_FILE] [--tomcat-password TOMCAT_PASSWORD]
+                              [--tomcat-passwords-file TOMCAT_PASSWORDS_FILE] [-tf TARGETS_FILE] [-tt TARGET] [-tp TARGET_PORTS] [-ad AUTH_DOMAIN] [-ai AUTH_DC_IP]
+                              [-au AUTH_USER] [-ap AUTH_PASSWORD] [-ah AUTH_HASHES] [--ldaps] [--subnets]
 
 A python script to scan for Apache Tomcat server vulnerabilities.
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
   -v, --verbose         Verbose mode. (default: False)
   --debug               Debug mode, for huge verbosity. (default: False)
@@ -97,7 +101,7 @@ Targets:
   -ah AUTH_HASHES, --auth-hashes AUTH_HASHES
                         LM:NT hashes to pass the hash for this user.
   --ldaps               Use LDAPS (default: False)
-
+  --subnets             Get all subnets from the domain and use them as targets (default: False)
 ```
 
 ## Example

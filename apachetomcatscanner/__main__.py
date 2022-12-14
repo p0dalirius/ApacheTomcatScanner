@@ -55,7 +55,7 @@ def load_targets(options, config):
         )
 
     # Loading targets from subnetworks of the domain
-    if options.auth_dc_ip is not None and options.auth_user is not None and (options.auth_password is not None or options.auth_hashes is not None):
+    if options.subnets and options.auth_dc_ip is not None and options.auth_user is not None and (options.auth_password is not None or options.auth_hashes is not None):
         if options.debug:
             print("[debug] Loading targets from servers in the domain '%s'" % options.auth_domain)
         targets += get_subnets(
@@ -89,9 +89,7 @@ def load_targets(options, config):
 
     # Sort uniq on targets list
     targets = sorted(list(set(targets)))
-
-    print(targets)
-
+    
     final_targets = []
     # Parsing target to filter IP/DNS/CIDR
     for target in targets:

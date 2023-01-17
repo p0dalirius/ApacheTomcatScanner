@@ -90,8 +90,6 @@ def load_targets(options, config):
     # Sort uniq on targets list
     targets = sorted(list(set(targets)))
 
-    print(targets)
-
     final_targets = []
     # Parsing target to filter IP/DNS/CIDR
     for target in targets:

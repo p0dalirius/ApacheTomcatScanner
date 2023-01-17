@@ -15,7 +15,7 @@ class Config(object):
 
     request_timeout = 1
     request_proxies = {}
-    request_no_check_certificate = False
+    request_no_check_certificate = True
 
     request_available_schemes = ["http"]
 

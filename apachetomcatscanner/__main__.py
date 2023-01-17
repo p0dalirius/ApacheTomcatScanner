@@ -3,6 +3,7 @@
 # File name          : __main__.py
 # Author             : Podalirius (@podalirius_)
 # Date created       : 24 Jul 2022
+import threading
 
 import argparse
 import os
@@ -11,14 +12,14 @@ import sys
 from apachetomcatscanner.Reporter import Reporter
 from apachetomcatscanner.Config import Config
 from apachetomcatscanner.VulnerabilitiesDB import VulnerabilitiesDB
-from apachetomcatscanner.utils.scan import scan_worker
+from apachetomcatscanner.utils.scan import scan_worker, monitor_thread
 from sectools.windows.ldap import get_computers_from_domain, get_servers_from_domain, get_subnets
 from sectools.network.domains import is_fqdn
 from sectools.network.ip import is_ipv4_cidr, is_ipv4_addr, is_ipv6_addr, expand_cidr, expand_port_range
 from concurrent.futures import ThreadPoolExecutor
 
 
-VERSION = "2.3.5"
+VERSION = "3.0"
 
 banner = """Apache Tomcat Scanner v%s - by @podalirius_\n""" % VERSION
 
@@ -90,8 +91,6 @@ def load_targets(options, config):
     # Sort uniq on targets list
     targets = sorted(list(set(targets)))
 
-    print(targets)
-
     final_targets = []
     # Parsing target to filter IP/DNS/CIDR
     for target in targets:
@@ -128,12 +127,12 @@ def parseArgs():
     parser.add_argument("-v", "--verbose", default=False, action="store_true", help="Verbose mode. (default: False)")
     parser.add_argument("--debug", default=False, action="store_true", help="Debug mode, for huge verbosity. (default: False)")
     parser.add_argument("-C", "--list-cves", default=False, action="store_true", help="List CVE ids affecting each version found. (default: False)")
-    parser.add_argument("-T", "--threads", default=8, type=int, help="Number of threads (default: 5)")
+    parser.add_argument("-T", "--threads", default=250, type=int, help="Number of threads (default: 250)")
     parser.add_argument("-s", "--servers-only", default=False, action="store_true", help="If querying ActiveDirectory, only get servers and not all computer objects. (default: False)")
 
     parser.add_argument("--only-http", default=False, action="store_true", help="Scan only with HTTP scheme. (default: False, scanning with both HTTP and HTTPs)")
     parser.add_argument("--only-https", default=False, action="store_true", help="Scan only with HTTPs scheme. (default: False, scanning with both HTTP and HTTPs)")
-    parser.add_argument("--no-check-certificate", default=False, action="store_true", help="Do not check certificate. (default: False)")
+    # parser.add_argument("--no-check-certificate", default=False, action="store_true", help="Do not check certificate. (default: False)")
 
     group_export = parser.add_argument_group("Export results")
     group_export.add_argument("--export-xlsx", dest="export_xlsx", type=str, default=None, required=False, help="Output XLSX file to store the results in.")
@@ -152,7 +151,7 @@ def parseArgs():
     group_targets_source = parser.add_argument_group("Targets")
     group_targets_source.add_argument("-tf", "--targets-file", default=None, type=str, help="Path to file containing a line by line list of targets.")
     group_targets_source.add_argument("-tt", "--target", default=[], type=str, action='append', help="Target IP, FQDN or CIDR")
-    group_targets_source.add_argument("-tp", "--target-ports", default="80,443,8080", type=str, help="Target ports to scan top search for Apache Tomcat servers.")
+    group_targets_source.add_argument("-tp", "--target-ports", default="80,443,8080,8081,9080,9081,10080", type=str, help="Target ports to scan top search for Apache Tomcat servers.")
     group_targets_source.add_argument("-ad", "--auth-domain", default="", type=str, help="Windows domain to authenticate to.")
     group_targets_source.add_argument("-ai", "--auth-dc-ip", default=None, type=str, help="IP of the domain controller.")
     group_targets_source.add_argument("-au", "--auth-user", default=None, type=str, help="Username of the domain account.")
@@ -189,14 +188,13 @@ def main():
     config.set_request_available_schemes(only_http=options.only_http, only_https=options.only_https)
     config.set_request_timeout(options.request_timeout)
     config.set_request_proxies(options.proxy_ip, options.proxy_port)
-    config.set_request_no_check_certificate(options.no_check_certificate)
+    # config.set_request_no_check_certificate(options.no_check_certificate)
     config.set_list_cves_mode(options.list_cves)
 
     config.load_credentials_from_options(options.tomcat_username, options.tomcat_password, options.tomcat_usernames_file, options.tomcat_passwords_file)
 
-    reporter = Reporter(config=config)
-
     vulns_db = VulnerabilitiesDB(config=config)
+    reporter = Reporter(config=config, vulns_db=vulns_db)
 
     # Parsing targets and ports
     targets = load_targets(options, config)
@@ -211,10 +209,12 @@ def main():
             # Exploring targets
             if len(targets) != 0 and options.threads != 0:
                 print("[+] Searching for Apache Tomcats servers on specified targets ...")
-                with ThreadPoolExecutor(max_workers=min(options.threads, len(targets))) as tp:
+                monitor_data = {"actions_performed": 0, "total": (len(targets)*len(ports)), "lock": threading.Lock()}
+                with ThreadPoolExecutor(max_workers=min(options.threads, 1+monitor_data["total"])) as tp:
+                    tp.submit(monitor_thread, reporter, config, monitor_data)
                     for target in targets:
                         for port in ports:
-                            tp.submit(scan_worker, target, port, reporter, vulns_db, config)
+                            tp.submit(scan_worker, target, port, reporter, config, monitor_data)
                 print("[+] All done!")
 
             if options.export_xlsx is not None:

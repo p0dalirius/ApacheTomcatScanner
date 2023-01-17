@@ -17,22 +17,70 @@ class Reporter(object):
 
     data = {}
 
-    def __init__(self, config):
+    def __init__(self, config, vulns_db):
         super(Reporter, self).__init__()
         self.config = config
+        self.vulns_db = vulns_db
+        self._new_results = []
 
-    def report_result(self, computer_ip, computer_port, tomcat_version, manager_accessible, default_credentials, cves):
+    def report_result(self, computer_ip, computer_port, tomcat_version, manager_accessible, credentials_found):
         computer_port = str(computer_port)
+
+        finding = {}
+        finding["computer_ip"] = computer_ip
+        finding["computer_port"] = computer_port
+        finding["tomcat_version"] = tomcat_version
+        finding["manager_accessible"] = manager_accessible
+        finding["credentials_found"] = credentials_found
+
         if computer_ip not in self.data.keys():
             self.data[computer_ip] = {}
         if str(computer_port) not in self.data[computer_ip].keys():
             self.data[computer_ip][computer_port] = {}
-        self.data[computer_ip][computer_port]["computer_ip"] = computer_ip
-        self.data[computer_ip][computer_port]["computer_port"] = computer_port
-        self.data[computer_ip][computer_port]["tomcat_version"] = tomcat_version
-        self.data[computer_ip][computer_port]["manager_accessible"] = manager_accessible
-        self.data[computer_ip][computer_port]["default_credentials"] = default_credentials
-        self.data[computer_ip][computer_port]["cves"] = cves
+        self.data[computer_ip][computer_port] = finding
+        self._new_results.append(finding)
+
+    def print_new_results(self):
+        try:
+            for finding in self._new_results:
+
+                # List of cves
+                cve_str = ""
+                if self.config.list_cves_mode == True:
+                    cve_list = self.vulns_db.get_vulnerabilities_of_version_sorted_by_criticity(finding["tomcat_version"], colors=True, reverse=True)
+                    if len(cve_list) != 0:
+                        cve_str = "CVEs: %s" % ', '.join(cve_list)
+
+                # credentials_str = "username:%s\npassword:%s" % (credentials_found[0][1]["username"], credentials_found[0][1]["password"])
+
+                if finding["manager_accessible"]:
+                    print("[>] [Apache Tomcat/\x1b[1;95m%s\x1b[0m] on \x1b[1;93m%s\x1b[0m:\x1b[1;93m%s\x1b[0m (manager:\x1b[1;92maccessible\x1b[0m) %s\x1b[0m " % (
+                            finding["tomcat_version"],
+                            finding["computer_ip"],
+                            finding["computer_port"],
+                            cve_str
+                        )
+                    )
+                    if len(finding["credentials_found"]) != 0:
+                        for statuscode, creds in finding["credentials_found"]:
+                            if len(creds["description"]) != 0:
+                                print("  | Valid user: \x1b[1;92m%s\x1b[0m | password:\x1b[1;92m%s\x1b[0m | \x1b[94m%s\x1b[0m" % (creds["username"], creds["password"], creds["description"]))
+                            else:
+                                print("  | Valid user: \x1b[1;92m%s\x1b[0m | password:\x1b[1;92m%s\x1b[0m" % (creds["username"], creds["password"]))
+
+                else:
+                    print("[>] [Apache Tomcat/\x1b[1;95m%s\x1b[0m] on \x1b[1;93m%s\x1b[0m:\x1b[1;93m%s\x1b[0m (manager:\x1b[1;91mnot accessible\x1b[0m) %s\x1b[0m " % (
+                            finding["tomcat_version"],
+                            finding["computer_ip"],
+                            finding["computer_port"],
+                            cve_str
+                        )
+                    )
+
+                self._new_results.remove(finding)
+        except Exception as e:
+            if self.config.debug_mode:
+                print("[Error in %s] %s" % (__name__, e))
 
     def export_xlsx(self, path_to_file):
         basepath = os.path.dirname(path_to_file)
@@ -58,13 +106,16 @@ class Reporter(object):
         for computername in self.data.keys():
             computer = self.data[computername]
             for port in computer.keys():
+                cve_list = self.vulns_db.get_vulnerabilities_of_version_sorted_by_criticity(computer[port]["tomcat_version"], colors=False, reverse=True)
+                cve_str = ', '.join([cve["cve"]["id"] for cve in cve_list])
+
                 data = [
                     computer[port]["computer_ip"],
                     computer[port]["computer_port"],
                     computer[port]["tomcat_version"],
                     str(computer[port]["manager_accessible"]).upper(),
                     computer[port]["default_credentials"],
-                    computer[port]["cves"]
+                    cve_str
                 ]
                 worksheet.write_row(row_id, 0, data)
                 row_id += 1
@@ -100,13 +151,16 @@ class Reporter(object):
         for computername in self.data.keys():
             computer = self.data[computername]
             for port in computer.keys():
+                cve_list = self.vulns_db.get_vulnerabilities_of_version_sorted_by_criticity(computer[port]["tomcat_version"], colors=False, reverse=True)
+                cve_str = ', '.join([cve["cve"]["id"] for cve in cve_list])
+
                 cursor.execute("INSERT INTO results VALUES (?, ?, ?, ?, ?, ?)", (
                         computer[port]["computer_ip"],
                         computer[port]["computer_port"],
                         computer[port]["tomcat_version"],
                         str(computer[port]["manager_accessible"]).upper(),
                         computer[port]["default_credentials"],
-                        computer[port]["cves"]
+                        cve_str
                     )
                 )
         conn.commit()

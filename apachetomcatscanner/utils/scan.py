@@ -5,33 +5,21 @@
 # Date created       : 29 Jul 2022
 
 import base64
+import datetime
 import re
+import time
+from apachetomcatscanner.utils.network import is_port_open, is_http_accessible
+
+
 import requests
-
-
-def is_target_a_windows_machine() -> bool:
-    # if port 135 and 445 open
+# Disable warnings of insecure connection for invalid certificates
+requests.packages.urllib3.disable_warnings()
+# Allow use of deprecated and weak cipher methods
+requests.packages.urllib3.util.ssl_.DEFAULT_CIPHERS += ':HIGH:!DH:!aNULL'
+try:
+    requests.packages.urllib3.contrib.pyopenssl.util.ssl_.DEFAULT_CIPHERS += ':HIGH:!DH:!aNULL'
+except AttributeError:
     pass
-
-
-def is_target_a_windows_domain_controller() -> bool:
-    # if port 135 and 445 and 88 and ldap/ldaps open
-    pass
-
-
-def is_http_accessible(target, port, config, scheme="http"):
-    url = "%s://%s:%d/" % (scheme, target, port)
-    try:
-        r = requests.get(
-            url,
-            timeout=config.request_timeout,
-            proxies=config.request_proxies,
-            verify=(not (config.request_no_check_certificate))
-        )
-        return True
-    except Exception as e:
-        config.debug("Error in is_http_accessible('%s', %d, '%s'): %s " % (target, port, scheme, e))
-        return False
 
 
 def is_tomcat_manager_accessible(target, port, config, scheme="http"):
@@ -97,56 +85,64 @@ def try_default_credentials(target, port, config, scheme="http"):
         return found_credentials
 
 
-def scan_worker(target, port, reporter, vulns_db, config):
-    config.debug("scan_worker('%s', %d, ...)" % (target, port))
-    result = {"target": target}
-    for scheme in config.get_request_available_schemes():
-        if is_http_accessible(target, port, config, scheme):
-            result["version"] = get_version_from_malformed_http_request(target, port, config, scheme)
-            if result["version"] is not None:
-                config.debug("Found version %s" % result["version"])
+def scan_worker(target, port, reporter, config, monitor_data):
+    try:
+        result = {"target": target}
 
-                result["manager_accessible"] = is_tomcat_manager_accessible(target, port, config, scheme)
+        if is_port_open(target, port):
+            for scheme in config.get_request_available_schemes():
+                if is_http_accessible(target, port, config, scheme):
+                    result["version"] = get_version_from_malformed_http_request(target, port, config, scheme)
+                    if result["version"] is not None:
+                        config.debug("Found version %s" % result["version"])
 
-                credentials = []
-                if result["manager_accessible"]:
-                    config.debug("Manager is accessible")
-                    # Test for default credentials
-                    credentials = try_default_credentials(target, port, config, scheme)
+                        result["manager_accessible"] = is_tomcat_manager_accessible(target, port, config, scheme)
 
-                str_found_creds = []
-                if len(credentials) != 0:
-                    for statuscode, creds in credentials:
-                        str_found_creds.append("(username:\x1b[1;92m%s\x1b[0m password:\x1b[1;92m%s\x1b[0m)" % (creds["username"], creds["password"]))
+                        credentials_found = []
+                        if result["manager_accessible"]:
+                            config.debug("Manager is accessible")
+                            # Test for default credentials
+                            credentials_found = try_default_credentials(target, port, config, scheme)
 
-                # List of cves
-                cve_str = ""
-                if config.list_cves_mode == True:
-                    cve_list = vulns_db.get_vulnerabilities_of_version_sorted_by_criticity(result["version"], colors=True, reverse=True)
-                    if len(cve_list) != 0:
-                        cve_str = "CVEs: %s" % ', '.join(cve_list)
+                        reporter.report_result(
+                            target,
+                            port,
+                            result["version"],
+                            result["manager_accessible"],
+                            credentials_found
+                        )
 
-                print("[>] [Apache Tomcat/\x1b[1;95m%s\x1b[0m] on \x1b[1;93m%s\x1b[0m:\x1b[1;93m%d\x1b[0m (manager:%s) %s %s\x1b[0m " % (
-                        result["version"],
-                        target,
-                        port,
-                        ("\x1b[1;92maccessible\x1b[0m" if result["manager_accessible"] else "\x1b[1;91mnot accessible\x1b[0m"),
-                        ' '.join(str_found_creds),
-                        cve_str
-                    )
-                )
+        monitor_data["lock"].acquire()
+        monitor_data["actions_performed"] = monitor_data["actions_performed"] + 1
+        # print("Updated for port %d" % port)
+        monitor_data["lock"].release()
 
-                cve_list = vulns_db.get_vulnerabilities_of_version_sorted_by_criticity(result["version"], colors=False, reverse=True)
-                credentials_str = "username:%s\npassword:%s" % (credentials[0][1]["username"], credentials[0][1]["password"])
-                cve_str = ', '.join([cve["cve"]["id"] for cve in cve_list])
-
-                reporter.report_result(
-                    target,
-                    port,
-                    result["version"],
-                    result["manager_accessible"],
-                    credentials_str,
-                    cve_str
-                )
+    except Exception as e:
+        if config.debug_mode:
+            print("[Error in %s] %s" % (__name__, e))
 
 
+def monitor_thread(reporter, config, monitor_data):
+    last_check, monitoring = 0, True
+    while monitoring:
+        new_check = monitor_data["actions_performed"]
+        rate = (new_check - last_check)
+        if not config.debug_mode:
+            print("\r", end="")
+        reporter.print_new_results()
+        print("[%s] Status (%d/%d) %5.2f %% | Rate %d tests/s        " % (
+                datetime.datetime.now().strftime("%Y/%m/%d %Hh%Mm%Ss"),
+                new_check, monitor_data["total"], (new_check/monitor_data["total"])*100,
+                rate
+            ),
+            end=("" if not config.debug_mode else "\n")
+        )
+        last_check = new_check
+        time.sleep(1)
+        if rate == 0 and monitor_data["actions_performed"] == monitor_data["total"]:
+            monitoring = False
+
+    if len(reporter._new_results) != 0:
+        reporter.print_new_results()
+
+    print()

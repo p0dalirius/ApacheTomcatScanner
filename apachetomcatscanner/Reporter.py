@@ -23,14 +23,12 @@ class Reporter(object):
         self.vulns_db = vulns_db
         self._new_results = []
 
-    def report_result(self, computer_ip, computer_port, tomcat_version, manager_accessible, credentials_found):
+    def report_result(self, computer_ip, computer_port, result, credentials_found):
         computer_port = str(computer_port)
 
-        finding = {}
+        finding = result.copy()
         finding["computer_ip"] = computer_ip
         finding["computer_port"] = computer_port
-        finding["tomcat_version"] = tomcat_version
-        finding["manager_accessible"] = manager_accessible
         finding["credentials_found"] = credentials_found
 
         if computer_ip not in self.data.keys():
@@ -43,7 +41,6 @@ class Reporter(object):
     def print_new_results(self):
         try:
             for finding in self._new_results:
-
                 # List of cves
                 cve_str = ""
                 if self.config.list_cves_mode == True:
@@ -51,26 +48,28 @@ class Reporter(object):
                     if len(cve_list) != 0:
                         cve_str = "CVEs: %s" % ', '.join(cve_list)
 
-                # credentials_str = "username:%s\npassword:%s" % (credentials_found[0][1]["username"], credentials_found[0][1]["password"])
-
                 if finding["manager_accessible"]:
-                    print("[>] [Apache Tomcat/\x1b[1;95m%s\x1b[0m] on \x1b[1;93m%s\x1b[0m:\x1b[1;93m%s\x1b[0m (manager:\x1b[1;92maccessible\x1b[0m) %s\x1b[0m " % (
-                            finding["tomcat_version"],
+                    print("[>] [Apache Tomcat/\x1b[1;95m%s\x1b[0m] on \x1b[1;93m%s\x1b[0m:\x1b[1;93m%s\x1b[0m (manager: \x1b[1;92maccessible\x1b[0m) on %s\x1b[0m " % (
+                            finding["version"],
                             finding["computer_ip"],
                             finding["computer_port"],
-                            cve_str
+                            finding["manager_url"]
                         )
                     )
+
                     if len(finding["credentials_found"]) != 0:
                         for statuscode, creds in finding["credentials_found"]:
                             if len(creds["description"]) != 0:
-                                print("  | Valid user: \x1b[1;92m%s\x1b[0m | password:\x1b[1;92m%s\x1b[0m | \x1b[94m%s\x1b[0m" % (creds["username"], creds["password"], creds["description"]))
+                                print("  | Valid user: \x1b[1;92m%s\x1b[0m | password: \x1b[1;92m%s\x1b[0m | \x1b[94m%s\x1b[0m" % (creds["username"], creds["password"], creds["description"]))
                             else:
-                                print("  | Valid user: \x1b[1;92m%s\x1b[0m | password:\x1b[1;92m%s\x1b[0m" % (creds["username"], creds["password"]))
+                                print("  | Valid user: \x1b[1;92m%s\x1b[0m | password: \x1b[1;92m%s\x1b[0m" % (creds["username"], creds["password"]))
+
+                    if len(cve_str) != 0:
+                        print("  | %s" % cve_str)
 
                 else:
-                    print("[>] [Apache Tomcat/\x1b[1;95m%s\x1b[0m] on \x1b[1;93m%s\x1b[0m:\x1b[1;93m%s\x1b[0m (manager:\x1b[1;91mnot accessible\x1b[0m) %s\x1b[0m " % (
-                            finding["tomcat_version"],
+                    print("[>] [Apache Tomcat/\x1b[1;95m%s\x1b[0m] on \x1b[1;93m%s\x1b[0m:\x1b[1;93m%s\x1b[0m (manager: \x1b[1;91mnot accessible\x1b[0m) %s\x1b[0m " % (
+                            finding["version"],
                             finding["computer_ip"],
                             finding["computer_port"],
                             cve_str

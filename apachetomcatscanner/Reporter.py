@@ -74,7 +74,7 @@ class Reporter(object):
 
                 # List of cves
                 if self.config.list_cves_mode == True:
-                    cve_list = self.vulns_db.get_vulnerabilities_of_version_sorted_by_criticity(finding["tomcat_version"], colors=True, reverse=True)
+                    cve_list = self.vulns_db.get_vulnerabilities_of_version_sorted_by_criticity(finding["version"], colors=True, reverse=True)
                     if len(cve_list) != 0:
                         print("  | CVEs: %s" % ', '.join(cve_list))
 

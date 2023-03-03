@@ -10,6 +10,7 @@ install: build
 	python3 setup.py install
 
 build:
+	python3 -m pip uninstall apachetomcatscanner --yes
 	python3 setup.py sdist bdist_wheel
 
 upload: build

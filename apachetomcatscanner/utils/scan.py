@@ -6,11 +6,10 @@
 
 import base64
 import datetime
-import re
 import time
+import traceback
+import re
 from apachetomcatscanner.utils.network import is_port_open, is_http_accessible
-
-
 import requests
 # Disable warnings of insecure connection for invalid certificates
 requests.packages.urllib3.disable_warnings()
@@ -22,8 +21,7 @@ except AttributeError:
     pass
 
 
-def is_tomcat_manager_accessible(target, port, config, scheme="http"):
-    path = "/manager/html"
+def is_tomcat_manager_accessible(target, port, path, config, scheme="http"):
     url = "%s://%s:%d%s" % (scheme, target, port, path)
     try:
         r = requests.get(
@@ -86,43 +84,58 @@ def try_default_credentials(target, port, config, scheme="http"):
 
 
 def scan_worker(target, port, reporter, config, monitor_data):
+    manager_access_paths = [
+        "/manager/html",
+        "/..;/manager/html"
+    ]
+
     try:
         result = {"target": target}
 
         if is_port_open(target, port):
             for scheme in config.get_request_available_schemes():
                 if is_http_accessible(target, port, config, scheme):
+                    result["scheme"] = scheme
                     result["version"] = get_version_from_malformed_http_request(target, port, config, scheme)
                     if result["version"] is not None:
                         config.debug("Found version %s" % result["version"])
 
-                        result["manager_accessible"] = is_tomcat_manager_accessible(target, port, config, scheme)
+                        result["manager_accessible"] = False
+                        result["manager_path"] = ""
+                        for urlpath in manager_access_paths:
+                            if is_tomcat_manager_accessible(target, port, urlpath, config, scheme):
+                                result["manager_accessible"] = True
+                                result["manager_path"] = urlpath
+                                result["manager_url"] = "%s://%s:%d%s" % (scheme, target, port, urlpath)
+                                break
 
-                        credentials_found = []
                         if result["manager_accessible"]:
-                            config.debug("Manager is accessible")
-                            # Test for default credentials
-                            credentials_found = try_default_credentials(target, port, config, scheme)
+                            credentials_found = []
+                            if result["manager_accessible"]:
+                                config.debug("Manager is accessible")
+                                # Test for default credentials
+                                credentials_found = try_default_credentials(target, port, config, scheme)
 
-                        reporter.report_result(
-                            target,
-                            port,
-                            result["version"],
-                            result["manager_accessible"],
-                            credentials_found
-                        )
+                            reporter.report_result(
+                                target,
+                                port,
+                                result,
+                                credentials_found
+                            )
 
         monitor_data["lock"].acquire()
         monitor_data["actions_performed"] = monitor_data["actions_performed"] + 1
-        # print("Updated for port %d" % port)
+
         monitor_data["lock"].release()
 
     except Exception as e:
         if config.debug_mode:
             print("[Error in %s] %s" % (__name__, e))
+            traceback.print_exc()
 
 
 def monitor_thread(reporter, config, monitor_data):
+    time.sleep(1)
     last_check, monitoring = 0, True
     while monitoring:
         new_check = monitor_data["actions_performed"]
@@ -146,3 +159,4 @@ def monitor_thread(reporter, config, monitor_data):
         reporter.print_new_results()
 
     print()
+

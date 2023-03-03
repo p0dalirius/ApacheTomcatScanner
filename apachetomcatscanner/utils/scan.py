@@ -60,9 +60,9 @@ def get_version_from_malformed_http_request(target, port, config, scheme="http")
             return version
 
 
-def try_default_credentials(target, port, config, scheme="http"):
+def try_default_credentials(target, port, path, config, scheme="http"):
     found_credentials = []
-    url = "%s://%s:%d/manager/html" % (scheme, target, port)
+    url = "%s://%s:%d%s" % (scheme, target, port, path)
     try:
         for credentials in config.credentials:
             auth_string = bytes(credentials["username"] + ':' + credentials["password"], 'utf-8')
@@ -109,19 +109,13 @@ def scan_worker(target, port, reporter, config, monitor_data):
                                 result["manager_url"] = "%s://%s:%d%s" % (scheme, target, port, urlpath)
                                 break
 
+                        credentials_found = []
                         if result["manager_accessible"]:
-                            credentials_found = []
-                            if result["manager_accessible"]:
-                                config.debug("Manager is accessible")
-                                # Test for default credentials
-                                credentials_found = try_default_credentials(target, port, config, scheme)
+                            config.debug("Manager is accessible")
+                            # Test for default credentials
+                            credentials_found = try_default_credentials(target, port, result["manager_path"], config, scheme)
 
-                            reporter.report_result(
-                                target,
-                                port,
-                                result,
-                                credentials_found
-                            )
+                        reporter.report_result(target, port, result, credentials_found)
 
         monitor_data["lock"].acquire()
         monitor_data["actions_performed"] = monitor_data["actions_performed"] + 1

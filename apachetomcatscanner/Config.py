@@ -24,6 +24,8 @@ class Config(object):
     debug_mode = False
     verbose_mode = False
 
+    no_colors = False
+
     credentials = {}
 
     def __init__(self):
@@ -138,3 +140,10 @@ class Config(object):
 
     def clear_request_proxies(self):
         self.request_proxies = {}
+
+    def get_no_colors(self):
+        return self.no_colors
+    
+    def set_no_colors(self, value):
+        self.no_colors = value
+    

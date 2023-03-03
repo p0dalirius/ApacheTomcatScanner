@@ -129,7 +129,7 @@ def parseArgs():
     parser.add_argument("-C", "--list-cves", default=False, action="store_true", help="List CVE ids affecting each version found. (default: False)")
     parser.add_argument("-T", "--threads", default=250, type=int, help="Number of threads (default: 250)")
     parser.add_argument("-s", "--servers-only", default=False, action="store_true", help="If querying ActiveDirectory, only get servers and not all computer objects. (default: False)")
-
+    parser.add_argument("--no-colors", default=False, action="store_true", help="Disable colored output. (default: False)")
     parser.add_argument("--only-http", default=False, action="store_true", help="Scan only with HTTP scheme. (default: False, scanning with both HTTP and HTTPs)")
     parser.add_argument("--only-https", default=False, action="store_true", help="Scan only with HTTPs scheme. (default: False, scanning with both HTTP and HTTPs)")
     # parser.add_argument("--no-check-certificate", default=False, action="store_true", help="Do not check certificate. (default: False)")
@@ -185,6 +185,7 @@ def main():
 
     config = Config()
     config.set_debug_mode(options.debug)
+    config.set_no_colors(options.no_colors)
     config.set_request_available_schemes(only_http=options.only_http, only_https=options.only_https)
     config.set_request_timeout(options.request_timeout)
     config.set_request_proxies(options.proxy_ip, options.proxy_port)

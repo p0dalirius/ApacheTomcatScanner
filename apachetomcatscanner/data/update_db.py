@@ -37,6 +37,7 @@ def parse_vulns(vulnerabilities_in_this_ver, Version, Language, Update, Edition,
             if "cve" not in CVES[cve_id].keys():
                 CVES[cve_id]["cve"] = {}
             number_of_exploits = tds[3].text.strip()
+            CVES[cve_id]["cve"]["name"] = ""
             CVES[cve_id]["cve"]["id"] = cve_id
             CVES[cve_id]["cve"]["year"] = int(cve_id.split('-')[1])
             CVES[cve_id]["cve"]["vuln_type"] = tds[4].text.strip()

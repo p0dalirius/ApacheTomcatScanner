@@ -7,6 +7,7 @@
 import json
 import os.path
 import sqlite3
+import traceback
 import xlsxwriter
 
 
@@ -66,7 +67,7 @@ class Reporter(object):
 
                 else:
                     if self.config.no_colors:
-                        prompt = "[>] [Apache Tomcat/%s] on %s:%s (manager: not accessible) on %s "
+                        prompt = "[>] [Apache Tomcat/%s] on %s:%s (manager: not accessible)"
                     else:
                         prompt = "[>] [Apache Tomcat/\x1b[1;95m%s\x1b[0m] on \x1b[1;93m%s\x1b[0m:\x1b[1;93m%s\x1b[0m (manager: \x1b[1;91mnot accessible\x1b[0m)\x1b[0m "
                     print(prompt % (finding["version"], finding["computer_ip"], finding["computer_port"]))
@@ -81,6 +82,7 @@ class Reporter(object):
         except Exception as e:
             if self.config.debug_mode:
                 print("[Error in %s] %s" % (__name__, e))
+                traceback.print_exc()
 
     def export_xlsx(self, path_to_file):
         basepath = os.path.dirname(path_to_file)

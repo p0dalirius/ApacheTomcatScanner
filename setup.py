@@ -14,7 +14,7 @@ with open('requirements.txt', 'r', encoding='utf-8') as f:
 
 setuptools.setup(
     name="apachetomcatscanner",
-    version="3.1",
+    version="3.2",
     description="",
     url="https://github.com/p0dalirius/ApacheTomcatScanner",
     author="Podalirius",
@@ -33,6 +33,9 @@ setuptools.setup(
     python_requires='>=3.6',
     install_requires=requirements,
     entry_points={
-        'console_scripts': ['apachetomcatscanner=apachetomcatscanner.__main__:main']
+        'console_scripts': [
+            'apachetomcatscanner=apachetomcatscanner.__main__:main',
+            'ApacheTomcatScanner=apachetomcatscanner.__main__:main'
+        ]
     }
 )

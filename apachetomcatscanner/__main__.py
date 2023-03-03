@@ -3,8 +3,8 @@
 # File name          : __main__.py
 # Author             : Podalirius (@podalirius_)
 # Date created       : 24 Jul 2022
-import threading
 
+import threading
 import argparse
 import os
 import sys
@@ -19,7 +19,7 @@ from sectools.network.ip import is_ipv4_cidr, is_ipv4_addr, is_ipv6_addr, expand
 from concurrent.futures import ThreadPoolExecutor
 
 
-VERSION = "3.1"
+VERSION = "3.2"
 
 banner = """Apache Tomcat Scanner v%s - by @podalirius_\n""" % VERSION
 

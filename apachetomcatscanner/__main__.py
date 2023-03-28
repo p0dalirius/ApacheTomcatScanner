@@ -102,13 +102,15 @@ def load_targets(options, config):
     # Parsing target to filter IP/DNS/CIDR
     for target in targets:
         if is_ipv4_cidr(target):
-            final_targets += expand_cidr(target)
+            final_targets += [("ip", ip) for ip in expand_cidr(target)]
         elif is_ipv4_addr(target):
-            final_targets.append(target)
+            final_targets.append(("ipv4", target))
         elif is_ipv6_addr(target):
-            final_targets.append(target)
+            final_targets.append(("ipv6", target))
         elif is_fqdn(target):
-            final_targets.append(target)
+            final_targets.append(("fqdn", target))
+        elif target.startswith("http://") or target.startswith("https://"):
+            final_targets.append(("url", target))
         else:
             if options.debug:
                 print("[debug] Target '%s' was not added." % target)

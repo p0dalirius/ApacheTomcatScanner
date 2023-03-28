@@ -36,8 +36,11 @@ def is_target_a_windows_domain_controller(target) -> bool:
 def is_port_open(target, port) -> bool:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.settimeout(0.1)
-        return s.connect_ex((target, port)) == 0
-
+        # Non-existant domains cause a lot of errors, added error handling
+        try:
+            return s.connect_ex((target, port)) == 0
+        except Exception as e:
+            return False
 
 def is_http_accessible(target, port, config, scheme="http"):
     url = "%s://%s:%d/" % (scheme, target, port)

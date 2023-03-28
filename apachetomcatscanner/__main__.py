@@ -88,6 +88,13 @@ def load_targets(options, config):
         for target in options.target:
             targets.append(target)
 
+    # Loading targets from a single --target-url option
+    if len(options.target_url) != 0:
+        if options.debug:
+            print("[debug] Loading targets from --target-url options")
+        for target in options.target_url:
+            targets.append(target)
+
     # Sort uniq on targets list
     targets = sorted(list(set(targets)))
 
@@ -150,7 +157,8 @@ def parseArgs():
 
     group_targets_source = parser.add_argument_group("Targets")
     group_targets_source.add_argument("-tf", "--targets-file", default=None, type=str, help="Path to file containing a line by line list of targets.")
-    group_targets_source.add_argument("-tt", "--target", default=[], type=str, action='append', help="Target IP, FQDN or CIDR")
+    group_targets_source.add_argument("-tt", "--target", default=[], type=str, action='append', help="Target IP, FQDN or CIDR.")
+    group_targets_source.add_argument("-tu", "--target-url", default=[], type=str, action='append', help="Target URL to the tomcat manager.")
     group_targets_source.add_argument("-tp", "--target-ports", default="80,443,8080,8081,9080,9081,10080", type=str, help="Target ports to scan top search for Apache Tomcat servers.")
     group_targets_source.add_argument("-ad", "--auth-domain", default="", type=str, help="Windows domain to authenticate to.")
     group_targets_source.add_argument("-ai", "--auth-dc-ip", default=None, type=str, help="IP of the domain controller.")

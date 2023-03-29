@@ -36,12 +36,12 @@ sudo python3 -m pip install apachetomcatscanner
 
 ```
 $ ./ApacheTomcatScanner.py -h
-Apache Tomcat Scanner v3.2 - by @podalirius_
+Apache Tomcat Scanner v3.3 - by @podalirius_
 
-usage: ApacheTomcatScanner.py [-h] [-v] [--debug] [-C] [-T THREADS] [-s] [--no-colors] [--only-http] [--only-https] [--export-xlsx EXPORT_XLSX] [--export-json EXPORT_JSON] [--export-sqlite EXPORT_SQLITE] [-PI PROXY_IP]
-                              [-PP PROXY_PORT] [-rt REQUEST_TIMEOUT] [--tomcat-username TOMCAT_USERNAME] [--tomcat-usernames-file TOMCAT_USERNAMES_FILE] [--tomcat-password TOMCAT_PASSWORD]
-                              [--tomcat-passwords-file TOMCAT_PASSWORDS_FILE] [-tf TARGETS_FILE] [-tt TARGET] [-tp TARGET_PORTS] [-ad AUTH_DOMAIN] [-ai AUTH_DC_IP] [-au AUTH_USER] [-ap AUTH_PASSWORD] [-ah AUTH_HASHES] [--ldaps]
-                              [--subnets]
+usage: apachetomcatscanner [-h] [-v] [--debug] [-C] [-T THREADS] [-s] [--no-colors] [--only-http] [--only-https] [--export-xlsx EXPORT_XLSX] [--export-json EXPORT_JSON] [--export-sqlite EXPORT_SQLITE] [-PI PROXY_IP]
+                           [-PP PROXY_PORT] [-rt REQUEST_TIMEOUT] [--tomcat-username TOMCAT_USERNAME] [--tomcat-usernames-file TOMCAT_USERNAMES_FILE] [--tomcat-password TOMCAT_PASSWORD]
+                           [--tomcat-passwords-file TOMCAT_PASSWORDS_FILE] [-tf TARGETS_FILE] [-tt TARGET] [-tu TARGET_URL] [-tp TARGET_PORTS] [-ad AUTH_DOMAIN] [-ai AUTH_DC_IP] [-au AUTH_USER] [-ap AUTH_PASSWORD]
+                           [-ah AUTH_HASHES] [--ldaps] [--subnets]
 
 A python script to scan for Apache Tomcat server vulnerabilities.
 
@@ -73,19 +73,21 @@ Advanced configuration:
   -rt REQUEST_TIMEOUT, --request-timeout REQUEST_TIMEOUT
                         Set the timeout of HTTP requests.
   --tomcat-username TOMCAT_USERNAME
-                        Set the timeout of HTTP requests.
+                        Single tomcat username to test for login.
   --tomcat-usernames-file TOMCAT_USERNAMES_FILE
-                        Set the timeout of HTTP requests.
+                        File containing a list of tomcat usernames to test for login
   --tomcat-password TOMCAT_PASSWORD
-                        Set the timeout of HTTP requests.
+                        Single tomcat password to test for login.
   --tomcat-passwords-file TOMCAT_PASSWORDS_FILE
-                        Set the timeout of HTTP requests.
+                        File containing a list of tomcat passwords to test for login
 
 Targets:
   -tf TARGETS_FILE, --targets-file TARGETS_FILE
                         Path to file containing a line by line list of targets.
   -tt TARGET, --target TARGET
-                        Target IP, FQDN or CIDR
+                        Target IP, FQDN or CIDR.
+  -tu TARGET_URL, --target-url TARGET_URL
+                        Target URL to the tomcat manager.
   -tp TARGET_PORTS, --target-ports TARGET_PORTS
                         Target ports to scan top search for Apache Tomcat servers.
   -ad AUTH_DOMAIN, --auth-domain AUTH_DOMAIN

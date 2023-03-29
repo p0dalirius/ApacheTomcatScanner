@@ -18,10 +18,11 @@
     + [x] Retrieving list of computers from a Windows domain through an LDAP query to use them as a list of targets.
     + [x] Reading targets line by line from a file.
     + [x] Reading individual targets (IP/DNS/CIDR) from `-tt/--target` option. 
+    + [x] Reading individual targets URLs from `-tu/--target-url` option. 
  - [x] Custom list of ports to test.
  - [x] Tests for `/manager/html` accessibility.
  - [x] Tests for default credentials to access the Tomcat Manager.
- - [x] List the CVEs of each version with the `--list-cves` option
+ - [x] List the CVEs of each version with the `--list-cves` option, print detailed CVEs descriptions with `--show-cves-descriptions`
 
 
 ## Installation
@@ -36,12 +37,12 @@ sudo python3 -m pip install apachetomcatscanner
 
 ```
 $ ./ApacheTomcatScanner.py -h
-Apache Tomcat Scanner v3.3 - by @podalirius_
+Apache Tomcat Scanner v3.4 - by @podalirius_
 
-usage: apachetomcatscanner [-h] [-v] [--debug] [-C] [-T THREADS] [-s] [--no-colors] [--only-http] [--only-https] [--export-xlsx EXPORT_XLSX] [--export-json EXPORT_JSON] [--export-sqlite EXPORT_SQLITE] [-PI PROXY_IP]
-                           [-PP PROXY_PORT] [-rt REQUEST_TIMEOUT] [--tomcat-username TOMCAT_USERNAME] [--tomcat-usernames-file TOMCAT_USERNAMES_FILE] [--tomcat-password TOMCAT_PASSWORD]
-                           [--tomcat-passwords-file TOMCAT_PASSWORDS_FILE] [-tf TARGETS_FILE] [-tt TARGET] [-tu TARGET_URL] [-tp TARGET_PORTS] [-ad AUTH_DOMAIN] [-ai AUTH_DC_IP] [-au AUTH_USER] [-ap AUTH_PASSWORD]
-                           [-ah AUTH_HASHES] [--ldaps] [--subnets]
+usage: ApacheTomcatScanner.py [-h] [-v] [--debug] [-C] [--show-cves-descriptions] [-T THREADS] [-s] [--no-colors] [--only-http] [--only-https] [--export-xlsx EXPORT_XLSX] [--export-json EXPORT_JSON] [--export-sqlite EXPORT_SQLITE]
+                              [-PI PROXY_IP] [-PP PROXY_PORT] [-rt REQUEST_TIMEOUT] [--tomcat-username TOMCAT_USERNAME] [--tomcat-usernames-file TOMCAT_USERNAMES_FILE] [--tomcat-password TOMCAT_PASSWORD]
+                              [--tomcat-passwords-file TOMCAT_PASSWORDS_FILE] [-tf TARGETS_FILE] [-tt TARGET] [-tu TARGET_URL] [-tp TARGET_PORTS] [-ad AUTH_DOMAIN] [-ai AUTH_DC_IP] [-au AUTH_USER] [-ap AUTH_PASSWORD]
+                              [-ah AUTH_HASHES] [--ldaps] [--subnets]
 
 A python script to scan for Apache Tomcat server vulnerabilities.
 
@@ -50,6 +51,8 @@ options:
   -v, --verbose         Verbose mode. (default: False)
   --debug               Debug mode, for huge verbosity. (default: False)
   -C, --list-cves       List CVE ids affecting each version found. (default: False)
+  --show-cves-descriptions
+                        Show description of found CVEs. (default: False)
   -T THREADS, --threads THREADS
                         Number of threads (default: 250)
   -s, --servers-only    If querying ActiveDirectory, only get servers and not all computer objects. (default: False)

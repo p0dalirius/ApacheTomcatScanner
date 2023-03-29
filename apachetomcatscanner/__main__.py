@@ -19,7 +19,7 @@ from sectools.network.ip import is_ipv4_cidr, is_ipv4_addr, is_ipv6_addr, expand
 from concurrent.futures import ThreadPoolExecutor
 
 
-VERSION = "3.3"
+VERSION = "3.4"
 
 banner = """Apache Tomcat Scanner v%s - by @podalirius_\n""" % VERSION
 
@@ -136,6 +136,7 @@ def parseArgs():
     parser.add_argument("-v", "--verbose", default=False, action="store_true", help="Verbose mode. (default: False)")
     parser.add_argument("--debug", default=False, action="store_true", help="Debug mode, for huge verbosity. (default: False)")
     parser.add_argument("-C", "--list-cves", default=False, action="store_true", help="List CVE ids affecting each version found. (default: False)")
+    parser.add_argument("--show-cves-descriptions", default=False, action="store_true", help="Show description of found CVEs. (default: False)")
     parser.add_argument("-T", "--threads", default=250, type=int, help="Number of threads (default: 250)")
     parser.add_argument("-s", "--servers-only", default=False, action="store_true", help="If querying ActiveDirectory, only get servers and not all computer objects. (default: False)")
     parser.add_argument("--no-colors", default=False, action="store_true", help="Disable colored output. (default: False)")
@@ -201,6 +202,7 @@ def main():
     config.set_request_proxies(options.proxy_ip, options.proxy_port)
     # config.set_request_no_check_certificate(options.no_check_certificate)
     config.set_list_cves_mode(options.list_cves)
+    config.set_show_cves_descriptions_mode(options.show_cves_descriptions)
 
     config.load_credentials_from_options(options.tomcat_username, options.tomcat_password, options.tomcat_usernames_file, options.tomcat_passwords_file)
 

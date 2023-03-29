@@ -72,10 +72,15 @@ class Reporter(object):
                     print(prompt % (finding["version"], finding["computer_ip"], finding["computer_port"]))
 
                 # List of cves
-                if self.config.list_cves_mode == True:
+                if self.config.list_cves_mode == True and self.config.show_cves_descriptions_mode == False:
                     cve_list = self.vulns_db.get_vulnerabilities_of_version_sorted_by_criticity(finding["version"], colors=True, reverse=True)
+                    cve_list = [cve_colored for cve_colored, cve_content in cve_list]
                     if len(cve_list) != 0:
                         print("  | CVEs: %s" % ', '.join(cve_list))
+                elif self.config.show_cves_descriptions_mode == True:
+                    cve_list = self.vulns_db.get_vulnerabilities_of_version_sorted_by_criticity(finding["version"], colors=True, reverse=True)
+                    for cve_colored, cve_content in cve_list:
+                        print("  | %s: %s" % (cve_colored, cve_content["description"]))
 
                 self._new_results.remove(finding)
         except Exception as e:

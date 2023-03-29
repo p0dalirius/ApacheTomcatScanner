@@ -62,7 +62,7 @@ class VulnerabilitiesDB(object):
             vulnerabilities = sorted(vulnerabilities, key=lambda cve: cve["cvss"]["score"], reverse=reverse)
             if colors:
                 vulnerabilities = [
-                    colored_criticity[vuln["cvss"]["criticity"]] % vuln["cve"]["id"]
+                    (colored_criticity[vuln["cvss"]["criticity"]] % vuln["cve"]["id"], vuln)
                     for vuln in vulnerabilities
                 ]
         return vulnerabilities

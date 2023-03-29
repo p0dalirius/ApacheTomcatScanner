@@ -20,6 +20,7 @@ class Config(object):
     request_available_schemes = ["http"]
 
     list_cves_mode = False
+    show_cves_descriptions_mode = False
 
     debug_mode = False
     verbose_mode = False
@@ -146,4 +147,9 @@ class Config(object):
     
     def set_no_colors(self, value):
         self.no_colors = value
-    
+
+    def get_show_cves_descriptions_mode(self):
+        return self.show_cves_descriptions_mode
+
+    def set_show_cves_descriptions_mode(self, value):
+        self.show_cves_descriptions_mode = value

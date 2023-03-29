@@ -8,6 +8,7 @@ import base64
 import datetime
 import time
 import traceback
+import urllib.parse
 import re
 from apachetomcatscanner.utils.network import is_port_open, is_http_accessible
 import requests
@@ -21,11 +22,10 @@ except AttributeError:
     pass
 
 
-def is_tomcat_manager_accessible(target, port, path, config, scheme="http"):
-    url = "%s://%s:%d%s" % (scheme, target, port, path)
+def is_tomcat_manager_accessible(url_manager, config, scheme="http"):
     try:
         r = requests.get(
-            url,
+            url_manager,
             timeout=config.request_timeout,
             proxies=config.request_proxies,
             verify=(not (config.request_no_check_certificate))
@@ -35,39 +35,45 @@ def is_tomcat_manager_accessible(target, port, path, config, scheme="http"):
         else:
             return False
     except Exception as e:
-        config.debug("Error in is_tomcat_manager_accessible('%s', %d, '%s'): %s " % (target, port, scheme, e))
+        config.debug("Error in is_tomcat_manager_accessible('%s'): %s " % (url_manager, e))
         return False
 
 
-def get_version_from_malformed_http_request(target, port, config, scheme="http"):
-    url = "%s://%s:%d/{}" % (scheme, target, port)
+def get_version_from_malformed_http_request(url, config, scheme="http"):
+    version = None
+    url_depth = len(url.split('/')[3:])
+    test_urls = [
+        url + "/{}",
+        url + "/" + "..;/" * url_depth + "{}",
+    ]
     try:
-        r = requests.get(
-            url,
-            timeout=config.request_timeout,
-            proxies=config.request_proxies,
-            verify=(not (config.request_no_check_certificate))
-        )
+        for url in test_urls:
+            if version is None:
+                r = requests.get(
+                    url,
+                    timeout=config.request_timeout,
+                    proxies=config.request_proxies,
+                    verify=(not (config.request_no_check_certificate))
+                )
+                if r.status_code in [400, 404, 500]:
+                    # Bug triggered
+                    matched = re.search(b"(<h3>)Apache Tomcat(/)?([^<]+)(</h3>)", r.content)
+                    if matched is not None:
+                        _, _, _version, _ = matched.groups()
+                        version = _version.decode('utf-8')
+        return version
     except Exception as e:
         config.debug("Error in get_version_from_malformed_http_request('%s', %d, '%s'): %s " % (target, port, scheme, e))
         return None
-    if r.status_code in [400, 404, 500]:
-        # Bug triggered
-        matched = re.search(b"(<h3>)Apache Tomcat(/)?([^<]+)(</h3>)", r.content)
-        if matched is not None:
-            _, _, version, _ = matched.groups()
-            version = version.decode('utf-8')
-            return version
 
 
-def try_default_credentials(target, port, path, config, scheme="http"):
+def try_default_credentials(url_manager, config):
     found_credentials = []
-    url = "%s://%s:%d%s" % (scheme, target, port, path)
     try:
         for credentials in config.credentials:
             auth_string = bytes(credentials["username"] + ':' + credentials["password"], 'utf-8')
             r = requests.post(
-                url,
+                url_manager,
                 headers={
                     "Authorization": "Basic " + base64.b64encode(auth_string).decode('utf-8')
                 },
@@ -79,47 +85,96 @@ def try_default_credentials(target, port, path, config, scheme="http"):
                 found_credentials.append((r.status_code, credentials))
         return found_credentials
     except Exception as e:
-        config.debug("Error in get_version_from_malformed_http_request('%s', %d, '%s'): %s " % (target, port, scheme, e))
+        config.debug("Error in get_version_from_malformed_http_request('%s'): %s " % (url_manager, e))
         return found_credentials
 
 
-def scan_worker(target, port, reporter, config, monitor_data):
-    manager_access_paths = [
-        "/manager/html",
-        "/..;/manager/html"
+def process_url(scheme, target, port, url, config, reporter):
+    url = url.rstrip('/')
+    baseurl = '/'.join(url.split('/')[:3])
+    url_depth = len(url.split('/')[3:])
+
+    # Generating urls, with bypasses
+    possible_manager_urls = [
+        url,
+        url + "/manager/html",
+        url + "/..;/manager/html",
+        baseurl + "/manager/html",
+        baseurl + "/..;/manager/html",
+        url + "/" + "..;/" * url_depth + "manager/html",
     ]
+    possible_manager_urls = list(set(possible_manager_urls))
 
+    result = {
+        "target": target,
+        "scheme": scheme,
+        "version": get_version_from_malformed_http_request(url, config)
+    }
+
+    if result["version"] is not None:
+        config.debug("Found version %s" % result["version"])
+
+        result["manager_accessible"] = False
+        result["manager_path"] = ""
+        for url_manager in possible_manager_urls:
+            if is_tomcat_manager_accessible(url_manager, config, scheme):
+                result["manager_accessible"] = True
+                result["manager_path"] = '/'.join(url_manager.split('/')[3:])
+                result["manager_url"] = url_manager
+                break
+
+        # Testing credentials
+        credentials_found = []
+        if result["manager_accessible"]:
+            config.debug("Manager is accessible")
+            # Test for default credentials
+            credentials_found = try_default_credentials(url_manager, config)
+
+        reporter.report_result(target, port, result, credentials_found)
+
+    return result
+
+
+def scan_worker(target, port, reporter, config, monitor_data):
     try:
-        result = {"target": target}
-
         if is_port_open(target, port):
             for scheme in config.get_request_available_schemes():
                 if is_http_accessible(target, port, config, scheme):
-                    result["scheme"] = scheme
-                    result["version"] = get_version_from_malformed_http_request(target, port, config, scheme)
-                    if result["version"] is not None:
-                        config.debug("Found version %s" % result["version"])
-
-                        result["manager_accessible"] = False
-                        result["manager_path"] = ""
-                        for urlpath in manager_access_paths:
-                            if is_tomcat_manager_accessible(target, port, urlpath, config, scheme):
-                                result["manager_accessible"] = True
-                                result["manager_path"] = urlpath
-                                result["manager_url"] = "%s://%s:%d%s" % (scheme, target, port, urlpath)
-                                break
-
-                        credentials_found = []
-                        if result["manager_accessible"]:
-                            config.debug("Manager is accessible")
-                            # Test for default credentials
-                            credentials_found = try_default_credentials(target, port, result["manager_path"], config, scheme)
-
-                        reporter.report_result(target, port, result, credentials_found)
+                    url = "%s://%s:%d/" % (scheme, target, port)
+                    process_url(scheme, target, port, url, config, reporter)
 
         monitor_data["lock"].acquire()
         monitor_data["actions_performed"] = monitor_data["actions_performed"] + 1
+        monitor_data["lock"].release()
 
+    except Exception as e:
+        if config.debug_mode:
+            print("[Error in %s] %s" % (__name__, e))
+            traceback.print_exc()
+
+
+def scan_worker_url(url, reporter, config, monitor_data):
+    try:
+        scheme = urllib.parse.urlparse(url).scheme
+        netloc = urllib.parse.urlparse(url).netloc
+
+        host, port = None, None
+        matched = re.search("([^:]+)(:([0-9]+))?$", netloc)
+        if matched is not None:
+            host, _, port = matched.groups()
+            if port is None:
+                if scheme == "http":
+                    port = 80
+                elif scheme == "https":
+                    port = 443
+            else:
+                port = int(port)
+
+        if is_http_accessible(host, port, config, scheme):
+            process_url(scheme, host, port, url, config, reporter)
+
+        monitor_data["lock"].acquire()
+        monitor_data["actions_performed"] = monitor_data["actions_performed"] + 1
         monitor_data["lock"].release()
 
     except Exception as e:

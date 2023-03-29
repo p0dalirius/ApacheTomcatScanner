@@ -12,7 +12,7 @@ import sys
 from apachetomcatscanner.Reporter import Reporter
 from apachetomcatscanner.Config import Config
 from apachetomcatscanner.VulnerabilitiesDB import VulnerabilitiesDB
-from apachetomcatscanner.utils.scan import scan_worker, monitor_thread
+from apachetomcatscanner.utils.scan import scan_worker, scan_worker_url, monitor_thread
 from sectools.windows.ldap import get_computers_from_domain, get_servers_from_domain, get_subnets
 from sectools.network.domains import is_fqdn
 from sectools.network.ip import is_ipv4_cidr, is_ipv4_addr, is_ipv6_addr, expand_cidr, expand_port_range
@@ -172,7 +172,7 @@ def parseArgs():
 
     args = parser.parse_args()
 
-    if (args.targets_file is None) and (len(args.target) == 0) and (args.auth_user is None and (args.auth_password is None or args.auth_hashes is None)):
+    if (args.targets_file is None) and (len(args.target) == 0) and (len(args.target_url) == 0) and (args.auth_user is None and (args.auth_password is None or args.auth_hashes is None)):
         parser.print_help()
         print("\n[!] No targets specified.")
         sys.exit(0)
@@ -210,34 +210,51 @@ def main():
     # Parsing targets and ports
     targets = load_targets(options, config)
     ports = load_ports(options, config)
-    if len(targets) != 0:
-        if len(ports) != 0:
-            if options.proxy_ip is not None and options.proxy_port is not None:
-                print("[+] Targeting %d ports on %d targets through proxy %s:%d" % (len(ports), len(targets), options.proxy_ip, options.proxy_port))
-            else:
-                print("[+] Targeting %d ports on %d targets" % (len(ports), len(targets)))
 
-            # Exploring targets
-            if len(targets) != 0 and options.threads != 0:
-                print("[+] Searching for Apache Tomcats servers on specified targets ...")
-                monitor_data = {"actions_performed": 0, "total": (len(targets)*len(ports)), "lock": threading.Lock()}
-                with ThreadPoolExecutor(max_workers=min(options.threads, 1+monitor_data["total"])) as tp:
-                    tp.submit(monitor_thread, reporter, config, monitor_data)
-                    for target in targets:
+    targets_urls = [t for t in targets if t[0] == "url"]
+    targets_others = [t for t in targets if t[0] != "url"]
+    total_targets = len(targets_others) * len(ports) + len(targets_urls)
+
+    if total_targets != 0:
+        if options.proxy_ip is not None and options.proxy_port is not None:
+            if len(targets_others) != 0 and len(targets_urls) != 0:
+                print("[+] Targeting %d ports on %d hosts, and %d urls, through proxy %s:%d." % (len(ports), len(targets_others), len(targets_urls), options.proxy_ip, options.proxy_port))
+            elif len(targets_others) == 0 and len(targets_urls) != 0:
+                print("[+] Targeting %d urls, through proxy %s:%d." % (len(targets_urls), options.proxy_ip, options.proxy_port))
+            elif len(targets_others) != 0 and len(targets_urls) == 0:
+                print("[+] Targeting %d ports on %d hosts, through proxy %s:%d." % (len(ports), len(targets_others), options.proxy_ip, options.proxy_port))
+        else:
+            if len(targets_others) != 0 and len(targets_urls) != 0:
+                print("[+] Targeting %d ports on %d hosts, and %d urls." % (len(ports), len(targets_others), len(targets_urls)))
+            elif len(targets_others) == 0 and len(targets_urls) != 0:
+                print("[+] Targeting %d urls." % (len(targets_urls)))
+            elif len(targets_others) != 0 and len(targets_urls) == 0:
+                print("[+] Targeting %d ports on %d hosts." % (len(ports), len(targets_others)))
+
+        # Exploring targets
+        if len(targets) != 0 and options.threads != 0:
+            print("[+] Searching for Apache Tomcats servers on specified targets ...")
+
+            monitor_data = {"actions_performed": 0, "total": total_targets, "lock": threading.Lock()}
+            with ThreadPoolExecutor(max_workers=min(options.threads, 1+monitor_data["total"])) as tp:
+                tp.submit(monitor_thread, reporter, config, monitor_data)
+                for target_type, target in targets:
+                    if target_type == "url":
+                        tp.submit(scan_worker_url, target, reporter, config, monitor_data)
+                    else:
                         for port in ports:
                             tp.submit(scan_worker, target, port, reporter, config, monitor_data)
-                print("[+] All done!")
+            print("[+] All done!")
 
-            if options.export_xlsx is not None:
-                reporter.export_xlsx(options.export_xlsx)
+        if options.export_xlsx is not None:
+            reporter.export_xlsx(options.export_xlsx)
 
-            if options.export_json is not None:
-                reporter.export_json(options.export_json)
+        if options.export_json is not None:
+            reporter.export_json(options.export_json)
 
-            if options.export_sqlite is not None:
-                reporter.export_sqlite(options.export_sqlite)
-        else:
-            print("[!] Cannot start scan: no ports loaded.")
+        if options.export_sqlite is not None:
+            reporter.export_sqlite(options.export_sqlite)
+
     else:
         print("[!] Cannot start scan: no targets loaded.")
 

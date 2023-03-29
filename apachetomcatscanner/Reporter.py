@@ -42,7 +42,6 @@ class Reporter(object):
     def print_new_results(self):
         try:
             for finding in self._new_results:
-
                 if finding["manager_accessible"]:
                     if self.config.no_colors:
                         prompt = "[>] [Apache Tomcat/%s] on %s:%s (manager: accessible) on %s "

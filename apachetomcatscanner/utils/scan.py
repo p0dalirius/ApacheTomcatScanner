@@ -22,7 +22,7 @@ except AttributeError:
     pass
 
 
-def is_tomcat_manager_accessible(url_manager, config, scheme="http"):
+def is_tomcat_manager_accessible(url_manager, config):
     try:
         r = requests.get(
             url_manager,
@@ -39,7 +39,7 @@ def is_tomcat_manager_accessible(url_manager, config, scheme="http"):
         return False
 
 
-def get_version_from_malformed_http_request(url, config, scheme="http"):
+def get_version_from_malformed_http_request(url, config):
     version = None
     url_depth = len(url.split('/')[3:])
     test_urls = [
@@ -63,7 +63,7 @@ def get_version_from_malformed_http_request(url, config, scheme="http"):
                         version = _version.decode('utf-8')
         return version
     except Exception as e:
-        config.debug("Error in get_version_from_malformed_http_request('%s', %d, '%s'): %s " % (target, port, scheme, e))
+        config.debug("Error in get_version_from_malformed_http_request('%s'): %s " % (url, e))
         return None
 
 
@@ -117,7 +117,7 @@ def process_url(scheme, target, port, url, config, reporter):
         result["manager_accessible"] = False
         result["manager_path"] = ""
         for url_manager in possible_manager_urls:
-            if is_tomcat_manager_accessible(url_manager, config, scheme):
+            if is_tomcat_manager_accessible(url_manager, config):
                 result["manager_accessible"] = True
                 result["manager_path"] = '/'.join(url_manager.split('/')[3:])
                 result["manager_url"] = url_manager

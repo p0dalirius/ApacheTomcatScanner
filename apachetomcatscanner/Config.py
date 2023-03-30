@@ -13,7 +13,7 @@ class Config(object):
     Documentation for class Config
     """
 
-    request_timeout = 1
+    request_timeout = 5
     request_proxies = {}
     request_no_check_certificate = True
 

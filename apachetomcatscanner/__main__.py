@@ -152,7 +152,7 @@ def parseArgs():
     group_configuration = parser.add_argument_group("Advanced configuration")
     group_configuration.add_argument("-PI", "--proxy-ip", default=None, type=str, help="Proxy IP.")
     group_configuration.add_argument("-PP", "--proxy-port", default=None, type=int, help="Proxy port")
-    group_configuration.add_argument("-rt", "--request-timeout", default=1, type=int, help="Set the timeout of HTTP requests.")
+    group_configuration.add_argument("-rt", "--request-timeout", default=5, type=int, help="Set the timeout of HTTP requests.")
     group_configuration.add_argument("--tomcat-username", default=None, help="Single tomcat username to test for login.")
     group_configuration.add_argument("--tomcat-usernames-file", default=None, help="File containing a list of tomcat usernames to test for login")
     group_configuration.add_argument("--tomcat-password", default=None, help="Single tomcat password to test for login.")

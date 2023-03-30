@@ -45,12 +45,14 @@ def get_version_from_malformed_http_request(url, config):
     test_urls = [
         url + "/{}",
         url + "/" + "..;/" * url_depth + "{}",
+        url + "/..;/..;/",
     ]
+    test_urls = list(set(test_urls))
     try:
-        for url in test_urls:
+        for test_url in test_urls:
             if version is None:
                 r = requests.get(
-                    url,
+                    test_url,
                     timeout=config.request_timeout,
                     proxies=config.request_proxies,
                     verify=(not (config.request_no_check_certificate))

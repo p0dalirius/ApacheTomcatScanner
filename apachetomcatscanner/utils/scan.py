@@ -43,21 +43,23 @@ def get_version_from_malformed_http_request(url, config):
     version = None
     url_depth = len(url.split('/')[3:])
     test_urls = [
-        url + "/{}",
-        url + "/" + "..;/" * url_depth + "{}",
-        url + "/..;/..;/",
+        ("GET", url + "/{}"),
+        ("GET", url + "/" + "..;/" * url_depth + "{}"),
+        ("GET", url + "/..;/..;/"),
+        ("ACL", url + "/"),
     ]
     test_urls = list(set(test_urls))
     try:
-        for test_url in test_urls:
+        for test_method, test_url in test_urls:
             if version is None:
-                r = requests.get(
-                    test_url,
+                r = requests.request(
+                    method=test_method,
+                    url=test_url,
                     timeout=config.request_timeout,
                     proxies=config.request_proxies,
                     verify=(not (config.request_no_check_certificate))
                 )
-                if r.status_code in [400, 404, 500]:
+                if r.status_code in [400, 401, 403, 404, 405, 500]:
                     # Bug triggered
                     matched = re.search(b"(<h3>)Apache Tomcat(/)?([^<]+)(</h3>)", r.content)
                     if matched is not None:

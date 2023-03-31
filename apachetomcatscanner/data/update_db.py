@@ -7,9 +7,97 @@
 
 import json
 import os
+import re
+import datetime
 import requests
 from bs4 import BeautifulSoup
 import glob
+
+
+def get_versions_order():
+    dates_releases = {}
+    releases_dates = {}
+    for major_version in [3, 4, 5, 6, 7, 8, 9, 10, 11]:
+        base_url = "https://archive.apache.org/dist/tomcat/tomcat-%d/" % major_version
+        r = requests.get(base_url)
+        matched = re.findall(b"((<a href=[^>]+>[^<]+</a>)[ \t\n]+([0-9]{4}-[0-9]{2}-[0-9]{2}[ \t\n]+[0-9]{2}:[0-9]{2}(:[0-9]{2})?))", r.content)
+        for _, a, d, _ in matched:
+            a = BeautifulSoup(a, "lxml").find('a')
+            if a is not None:
+                if a["href"].endswith("/"):
+                    version = re.search("([0-9]+\.[0-9]+\.[0-9]+(-M[0-9]+)?)", a["href"])
+                    if version is not None:
+                        version = version.groups()[0]
+                        release_date = datetime.datetime.strptime(d.decode('utf-8'), "%Y-%m-%d %H:%M")
+                        release_date_ts = int(release_date.timestamp())
+
+                        if release_date_ts not in dates_releases.keys():
+                            dates_releases[release_date_ts] = []
+                        dates_releases[release_date_ts].append(version)
+                        dates_releases[release_date_ts] = list(set(dates_releases[release_date_ts]))
+
+                        if version not in releases_dates.keys():
+                            releases_dates[version] = []
+                        releases_dates[version].append(release_date_ts)
+                        releases_dates[version] = list(set(releases_dates[version]))
+                    # else:
+                    #     print("Skipped", a["href"])
+    return dates_releases, releases_dates
+
+
+def get_versions_in_range(dates_releases, releases_dates, version_start, version_stop):
+    matching_versions = []
+    if version_start in releases_dates.keys() and version_stop in releases_dates.keys():
+        ts_version_start = min(releases_dates[version_start])
+        ts_version_stop = max(releases_dates[version_stop])
+        for tskey in dates_releases.keys():
+            if ts_version_start <= tskey <= ts_version_stop:
+                matching_versions += dates_releases[tskey]
+
+    # Prepare filter
+    common_start = ""
+    for k in range(min(len(version_start), len(version_stop))):
+        if version_stop[k] == version_start[k]:
+            common_start += version_start[k]
+        else:
+            break
+    # filter
+    versions = []
+    for version in matching_versions:
+        if version.startswith(common_start):
+            versions.append(version)
+
+    return versions
+
+
+def add_versions_ranges_from_description(dates_releases, releases_dates, cve_data):
+    matched = re.findall('(([0-9]+\.[0-9]+\.[0-9]+(-M[0-9]+)?) (to|through) ([0-9]+\.[0-9]+\.[0-9]+(-M[0-9]+)?))', cve_data["description"])
+    version_ranges = [(m[1], m[4]) for m in matched]
+
+    for version_start, version_stop in version_ranges:
+        versions_in_range = get_versions_in_range(dates_releases, releases_dates, version_start, version_stop)
+        # print("Versions range %s ──> %s : %s" % (version_start, version_stop, versions_in_range))
+        for version_tag in versions_in_range:
+            matched = re.search("([0-9]+\.[0-9]+\.[0-9]+(-M[0-9]+)?)", version_tag)
+            if matched is not None:
+                Version, Update = matched.groups()
+                cve_data["affected_versions"].append({
+                    "tag": version_tag,
+                    "version": Version,
+                    "language": "*",
+                    "update": Update,
+                    "edition": "*"
+                })
+
+    # Unique set
+    new_versions = []
+    known_versions = []
+    for av in cve_data["affected_versions"]:
+        if av["tag"] not in known_versions:
+            new_versions.append(av)
+            known_versions.append(av["tag"])
+    cve_data["affected_versions"] = new_versions
+    return cve_data
 
 
 def parse_vulns(vulnerabilities_in_this_ver, Version, Language, Update, Edition, CVES):
@@ -72,7 +160,7 @@ def parse_vulns(vulnerabilities_in_this_ver, Version, Language, Update, Edition,
             if "affected_versions" not in CVES[cve_id].keys():
                 CVES[cve_id]["affected_versions"] = []
             CVES[cve_id]["affected_versions"].append({
-                "tag": (Version+'-'+Update if Update != '*' else Version),
+                "tag": (Version + '-' + Update if Update != '*' else Version),
                 "version": Version,
                 "language": Language,
                 "update": Update,
@@ -133,8 +221,13 @@ if __name__ == '__main__':
                 if not (Version == "*" and Language == "*" and Update == "*" and Edition == "*"):
                     parse_vulns(vulnerabilities_in_this_ver, Version, Language, Update, Edition, CVES)
 
+    dates_releases, releases_dates = get_versions_order()
+
     for cve_id, cve_data in CVES.items():
+        cve_data = add_versions_ranges_from_description(dates_releases, releases_dates, cve_data)
+
         save_path = "./vulnerabilities/%d/%s.json" % (cve_data["cve"]["year"], cve_id)
+
         if not os.path.exists(os.path.dirname(save_path)):
             os.makedirs(os.path.dirname(save_path))
 
@@ -143,4 +236,4 @@ if __name__ == '__main__':
             f.write(json.dumps(cve_data, indent=4))
             f.close()
         else:
-            print("[+] Skipping CVE-%s-%s because it already exists." % (cve_data["cve"]["year"], cve_id))
+            print("[+] Skipping %s because it already exists." % cve_id)

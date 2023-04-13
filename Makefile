@@ -7,11 +7,13 @@ clean:
 	@rm -rf ./build/ ./dist/ ./apachetomcatscanner.egg-info/
 
 install: build
-	python3 setup.py install
+	pip install .
 
 build:
 	python3 -m pip uninstall apachetomcatscanner --yes
-	python3 setup.py sdist bdist_wheel
+	pip install .[build]
+	python3 -m build
 
 upload: build
+	pip install .[twine]
 	twine upload dist/*

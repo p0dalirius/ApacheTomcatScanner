@@ -1,0 +1,3 @@
+sectools>=1.3.9
+xlsxwriter
+requests

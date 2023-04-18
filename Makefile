@@ -12,7 +12,7 @@ install: build
 build:
 	python3 -m pip uninstall apachetomcatscanner --yes
 	pip install .[build]
-	python3 -m build
+	python3 -m build --wheel
 
 upload: build
 	pip install .[twine]

@@ -89,6 +89,7 @@ class Reporter(object):
                 traceback.print_exc()
 
     def export_xlsx(self, path_to_file):
+        path_to_file = os.path.abspath(path_to_file)
         basepath = os.path.dirname(path_to_file)
         filename = os.path.basename(path_to_file)
         if basepath not in [".", ""]:
@@ -129,6 +130,7 @@ class Reporter(object):
         workbook.close()
 
     def export_json(self, path_to_file):
+        path_to_file = os.path.abspath(path_to_file)
         basepath = os.path.dirname(path_to_file)
         filename = os.path.basename(path_to_file)
         if basepath not in [".", ""]:
@@ -142,6 +144,7 @@ class Reporter(object):
         f.close()
 
     def export_sqlite(self, path_to_file):
+        path_to_file = os.path.abspath(path_to_file)
         basepath = os.path.dirname(path_to_file)
         filename = os.path.basename(path_to_file)
         if basepath not in [".", ""]:

@@ -56,9 +56,9 @@ def load_targets(options, config):
         )
 
     # Loading targets from subnetworks of the domain
-    if options.auth_dc_ip is not None and options.auth_user is not None and (options.auth_password is not None or options.auth_hashes is not None):
+    if options.subnets and options.auth_dc_ip is not None and options.auth_user is not None and (options.auth_password is not None or options.auth_hashes is not None):
         if options.debug:
-            print("[debug] Loading targets from servers in the domain '%s'" % options.auth_domain)
+            print("[debug] Loading targets from subnetworks of the domain '%s'" % options.auth_domain)
         targets += get_subnets(
             auth_domain=options.auth_domain,
             auth_dc_ip=options.auth_dc_ip,

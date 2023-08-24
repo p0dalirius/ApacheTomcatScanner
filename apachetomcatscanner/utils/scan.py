@@ -65,6 +65,21 @@ def get_version_from_malformed_http_request(url, config):
                     if matched is not None:
                         _, _, _version, _ = matched.groups()
                         version = _version.decode('utf-8')
+        # If version is still None, try to get it through the docs
+        if version is None and True:
+            r = requests.request(
+                method="GET",
+                url=(url + "/docs/"),
+                timeout=config.request_timeout,
+                proxies=config.request_proxies,
+                verify=(not (config.request_no_check_certificate))
+            )
+            if r.status_code == 200:
+                matched = re.search(b'(<div class="versionInfo">)Version( )*([^,]+),([^<]+)(</div>)', r.content)
+                if matched is not None:
+                    _, _, _version, _, _ = matched.groups()
+                    version = _version.decode('utf-8')
+                    print("Version using docs")
         return version
     except Exception as e:
         config.debug("Error in get_version_from_malformed_http_request('%s'): %s " % (url, e))

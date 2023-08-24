@@ -7,11 +7,11 @@ clean:
 	@rm -rf ./build/ ./dist/ ./apachetomcatscanner.egg-info/
 
 install: build
-	pip install .
+	pip install . --break-system-packages
 
 build:
-	python3 -m pip uninstall apachetomcatscanner --yes
-	pip install .[build]
+	python3 -m pip uninstall apachetomcatscanner --yes --break-system-packages
+	pip install .[build] --break-system-packages
 	python3 -m build --wheel
 
 upload: build

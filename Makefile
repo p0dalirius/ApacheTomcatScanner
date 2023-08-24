@@ -15,5 +15,5 @@ build:
 	python3 -m build --wheel
 
 upload: build
-	pip install .[twine]
+	pip install .[twine] --break-system-packages
 	twine upload dist/*

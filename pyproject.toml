@@ -35,3 +35,6 @@ build = [
 twine = [
     "twine"
 ]
+
+[tool.setuptools.packages.find]
+include = ["apachetomcatscanner*"]

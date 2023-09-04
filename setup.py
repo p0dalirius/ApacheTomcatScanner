@@ -34,7 +34,6 @@ setuptools.setup(
     install_requires=requirements,
     entry_points={
         'console_scripts': [
-            'apachetomcatscanner=apachetomcatscanner.__main__:main',
             'ApacheTomcatScanner=apachetomcatscanner.__main__:main'
         ]
     }

@@ -32,6 +32,9 @@ class Reporter(object):
         finding["computer_port"] = computer_port
         finding["credentials_found"] = credentials_found
 
+        cve_list = self.vulns_db.get_vulnerabilities_of_version_sorted_by_criticity(finding["version"], colors=False, reverse=True)
+        finding["cves"] = [cve["cve"]["id"] for cve in cve_list]
+
         if computer_ip not in self.data.keys():
             self.data[computer_ip] = {}
         if str(computer_port) not in self.data[computer_ip].keys():
@@ -112,16 +115,16 @@ class Reporter(object):
         row_id = 1
         for computername in self.data.keys():
             computer = self.data[computername]
-            for port in computer.keys():
-                cve_list = self.vulns_db.get_vulnerabilities_of_version_sorted_by_criticity(computer[port]["tomcat_version"], colors=False, reverse=True)
-                cve_str = ', '.join([cve["cve"]["id"] for cve in cve_list])
+            for _, finding in computer.items():
+                cve_str = ', '.join(finding["cves"])
+                credentials_str = ', '.join([f"{cred[1]} ({cred[0]})" for cred in finding["credentials_found"]])
 
                 data = [
-                    computer[port]["computer_ip"],
-                    computer[port]["computer_port"],
-                    computer[port]["tomcat_version"],
-                    str(computer[port]["manager_accessible"]).upper(),
-                    computer[port]["default_credentials"],
+                    finding["computer_ip"],
+                    finding["computer_port"],
+                    finding["version"],
+                    str(finding["manager_accessible"]).upper(),
+                    credentials_str,
                     cve_str
                 ]
                 worksheet.write_row(row_id, 0, data)
@@ -156,19 +159,19 @@ class Reporter(object):
 
         conn = sqlite3.connect(path_to_file)
         cursor = conn.cursor()
-        cursor.execute("CREATE TABLE IF NOT EXISTS results(computer_ip VARCHAR(255), computer_port INTEGER, tomcat_version VARCHAR(255), manager_accessible VARCHAR(255), default_credentials VARCHAR(255), cves INTEGER);")
+        cursor.execute("CREATE TABLE IF NOT EXISTS results(computer_ip VARCHAR(255), computer_port INTEGER, version VARCHAR(255), manager_accessible VARCHAR(255), credentials_found VARCHAR(255), cves INTEGER);")
         for computername in self.data.keys():
             computer = self.data[computername]
-            for port in computer.keys():
-                cve_list = self.vulns_db.get_vulnerabilities_of_version_sorted_by_criticity(computer[port]["tomcat_version"], colors=False, reverse=True)
-                cve_str = ', '.join([cve["cve"]["id"] for cve in cve_list])
+            for _, finding in computer.items():
+                cve_str = ', '.join(finding["cves"])
+                credentials_str = ', '.join([f"{cred[1]} ({cred[0]})" for cred in finding["credentials_found"]])
 
                 cursor.execute("INSERT INTO results VALUES (?, ?, ?, ?, ?, ?)", (
-                        computer[port]["computer_ip"],
-                        computer[port]["computer_port"],
-                        computer[port]["tomcat_version"],
-                        str(computer[port]["manager_accessible"]).upper(),
-                        computer[port]["default_credentials"],
+                        finding["computer_ip"],
+                        finding["computer_port"],
+                        finding["version"],
+                        str(finding["manager_accessible"]).upper(),
+                        credentials_str,
                         cve_str
                     )
                 )

@@ -19,7 +19,7 @@ from sectools.network.ip import is_ipv4_cidr, is_ipv4_addr, is_ipv6_addr, expand
 from concurrent.futures import ThreadPoolExecutor
 
 
-VERSION = "3.6"
+VERSION = "3.7"
 
 banner = """Apache Tomcat Scanner v%s - by @podalirius_\n""" % VERSION
 
@@ -214,7 +214,7 @@ def main():
     config.set_request_available_schemes(only_http=options.only_http, only_https=options.only_https)
     config.set_request_timeout(options.request_timeout)
     config.set_request_proxies(options.proxy_ip, options.proxy_port)
-    config.set_request_http_headers(options.request_http_headers)
+    config.set_request_http_headers(options.request_http_header)
     # config.set_request_no_check_certificate(options.no_check_certificate)
     config.set_list_cves_mode(options.list_cves)
     config.set_show_cves_descriptions_mode(options.show_cves_descriptions)

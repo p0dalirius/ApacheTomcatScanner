@@ -16,7 +16,7 @@ class Config(object):
     request_timeout = 5
     request_proxies = {}
     request_no_check_certificate = True
-
+    request_http_headers = {}
     request_available_schemes = ["http"]
 
     list_cves_mode = False
@@ -79,6 +79,15 @@ class Config(object):
             return False
 
     # Get / Set functions
+
+    def set_request_http_headers(self, http_headers):
+        self.request_http_headers.clear()
+        for header in http_headers:
+            if ":" in header:
+                key, value = header.split(":", 1)
+                self.request_http_headers[key] = value
+            else:
+                self.request_http_headers[header] = ""
 
     def get_request_available_schemes(self):
         return self.request_available_schemes

@@ -19,7 +19,7 @@ from sectools.network.ip import is_ipv4_cidr, is_ipv4_addr, is_ipv6_addr, expand
 from concurrent.futures import ThreadPoolExecutor
 
 
-VERSION = "3.6"
+VERSION = "3.7"
 
 banner = """Apache Tomcat Scanner v%s - by @podalirius_\n""" % VERSION
 
@@ -95,6 +95,18 @@ def load_targets(options, config):
         for target in options.target_url:
             targets.append(target)
 
+    # Loading target URLs line by line from a targets urls file
+    if options.targets_urls_file is not None:
+        if os.path.exists(options.targets_urls_file):
+            if options.debug:
+                print("[debug] Loading target URLs line by line from targets urls file '%s'" % options.targets_urls_file)
+            f = open(options.targets_urls_file, "r")
+            for line in f.readlines():
+                targets.append(line.strip())
+            f.close()
+        else:
+            print("[!] Could not open targets urls file '%s'" % options.targets_file)
+
     # Sort uniq on targets list
     targets = sorted(list(set(targets)))
 
@@ -153,6 +165,7 @@ def parseArgs():
     group_configuration.add_argument("-PI", "--proxy-ip", default=None, type=str, help="Proxy IP.")
     group_configuration.add_argument("-PP", "--proxy-port", default=None, type=int, help="Proxy port")
     group_configuration.add_argument("-rt", "--request-timeout", default=5, type=int, help="Set the timeout of HTTP requests.")
+    group_configuration.add_argument("-H", "--http-header", dest="request_http_header", default=[], type=str, action='append', help="Custom HTTP headers to add to requests.")
     group_configuration.add_argument("--tomcat-username", default=None, help="Single tomcat username to test for login.")
     group_configuration.add_argument("--tomcat-usernames-file", default=None, help="File containing a list of tomcat usernames to test for login")
     group_configuration.add_argument("--tomcat-password", default=None, help="Single tomcat password to test for login.")
@@ -162,6 +175,7 @@ def parseArgs():
     group_targets_source.add_argument("-tf", "--targets-file", default=None, type=str, help="Path to file containing a line by line list of targets.")
     group_targets_source.add_argument("-tt", "--target", default=[], type=str, action='append', help="Target IP, FQDN or CIDR.")
     group_targets_source.add_argument("-tu", "--target-url", default=[], type=str, action='append', help="Target URL to the tomcat manager.")
+    group_targets_source.add_argument("-tU", "--targets-urls-file", default=None, type=str, help="Path to file containing a line by line list of target URLs.")
     group_targets_source.add_argument("-tp", "--target-ports", default="80,443,8080,8081,9080,9081,10080", type=str, help="Target ports to scan top search for Apache Tomcat servers.")
     group_targets_source.add_argument("-ad", "--auth-domain", default="", type=str, help="Windows domain to authenticate to.")
     group_targets_source.add_argument("-ai", "--auth-dc-ip", default=None, type=str, help="IP of the domain controller.")
@@ -200,6 +214,7 @@ def main():
     config.set_request_available_schemes(only_http=options.only_http, only_https=options.only_https)
     config.set_request_timeout(options.request_timeout)
     config.set_request_proxies(options.proxy_ip, options.proxy_port)
+    config.set_request_http_headers(options.request_http_header)
     # config.set_request_no_check_certificate(options.no_check_certificate)
     config.set_list_cves_mode(options.list_cves)
     config.set_show_cves_descriptions_mode(options.show_cves_descriptions)

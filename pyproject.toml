@@ -38,3 +38,6 @@ twine = [
 
 [tool.setuptools.packages.find]
 include = ["apachetomcatscanner*"]
+
+[tool.setuptools.package-data]
+"*" = ["*"]

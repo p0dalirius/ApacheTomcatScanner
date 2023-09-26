@@ -95,6 +95,18 @@ def load_targets(options, config):
         for target in options.target_url:
             targets.append(target)
 
+    # Loading target URLs line by line from a targets urls file
+    if options.targets_urls_file is not None:
+        if os.path.exists(options.targets_urls_file):
+            if options.debug:
+                print("[debug] Loading target URLs line by line from targets urls file '%s'" % options.targets_urls_file)
+            f = open(options.targets_urls_file, "r")
+            for line in f.readlines():
+                targets.append(line.strip())
+            f.close()
+        else:
+            print("[!] Could not open targets urls file '%s'" % options.targets_file)
+
     # Sort uniq on targets list
     targets = sorted(list(set(targets)))
 
@@ -162,6 +174,7 @@ def parseArgs():
     group_targets_source.add_argument("-tf", "--targets-file", default=None, type=str, help="Path to file containing a line by line list of targets.")
     group_targets_source.add_argument("-tt", "--target", default=[], type=str, action='append', help="Target IP, FQDN or CIDR.")
     group_targets_source.add_argument("-tu", "--target-url", default=[], type=str, action='append', help="Target URL to the tomcat manager.")
+    group_targets_source.add_argument("-tU", "--targets-urls-file", default=None, type=str, help="Path to file containing a line by line list of target URLs.")
     group_targets_source.add_argument("-tp", "--target-ports", default="80,443,8080,8081,9080,9081,10080", type=str, help="Target ports to scan top search for Apache Tomcat servers.")
     group_targets_source.add_argument("-ad", "--auth-domain", default="", type=str, help="Windows domain to authenticate to.")
     group_targets_source.add_argument("-ai", "--auth-dc-ip", default=None, type=str, help="IP of the domain controller.")

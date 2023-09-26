@@ -32,8 +32,7 @@ class Reporter(object):
         finding["computer_port"] = computer_port
         finding["credentials_found"] = credentials_found
 
-        cve_list = self.vulns_db.get_vulnerabilities_of_version_sorted_by_criticity(finding["version"], colors=False, reverse=True)
-        finding["cves"] = [cve["cve"]["id"] for cve in cve_list]
+        finding["cves"] = self.vulns_db.get_vulnerabilities_of_version_sorted_by_criticity(finding["version"], colors=False, reverse=True)
 
         if computer_ip not in self.data.keys():
             self.data[computer_ip] = {}
@@ -116,7 +115,7 @@ class Reporter(object):
         for computername in self.data.keys():
             computer = self.data[computername]
             for _, finding in computer.items():
-                cve_str = ', '.join(finding["cves"])
+                cve_str = ', '.join([cve["cve"]["id"] for cve in finding["cves"]])
                 credentials_str = ', '.join([f"{cred[1]} ({cred[0]})" for cred in finding["credentials_found"]])
 
                 data = [
@@ -163,7 +162,7 @@ class Reporter(object):
         for computername in self.data.keys():
             computer = self.data[computername]
             for _, finding in computer.items():
-                cve_str = ', '.join(finding["cves"])
+                cve_str = ', '.join([cve["cve"]["id"] for cve in finding["cves"]])
                 credentials_str = ', '.join([f"{cred[1]} ({cred[0]})" for cred in finding["credentials_found"]])
 
                 cursor.execute("INSERT INTO results VALUES (?, ?, ?, ?, ?, ?)", (

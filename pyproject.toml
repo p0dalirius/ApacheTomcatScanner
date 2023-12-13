@@ -1,11 +1,8 @@
-[build-system]
-requires = ["setuptools", "wheel"]
-build-backend = "setuptools.build_meta"
-
 [project]
 name = "apachetomcatscanner"
-version = "3.6"
+version = "3.7.1"
 description = ""
+dynamic = ["scripts"]
 readme  = "README.md"
 requires-python = ">=3.6"
 license = { text = "GPL2"}
@@ -24,20 +21,20 @@ dependencies = [
     "requests==2.29.0"
 ]
 
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project.urls]
 repository = "https://github.com/p0dalirius/ApacheTomcatScanner"
 
-
 [project.optional-dependencies]
-build = [
-    "build"
-]
-twine = [
-    "twine"
-]
+build = ["build"]
+twine = ["twine"]
 
 [tool.setuptools.packages.find]
 include = ["apachetomcatscanner*"]
 
 [tool.setuptools.package-data]
 "*" = ["*"]
+

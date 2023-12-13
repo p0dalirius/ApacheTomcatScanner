@@ -176,7 +176,7 @@ def parseArgs():
     group_targets_source.add_argument("-tt", "--target", default=[], type=str, action='append', help="Target IP, FQDN or CIDR.")
     group_targets_source.add_argument("-tu", "--target-url", default=[], type=str, action='append', help="Target URL to the tomcat manager.")
     group_targets_source.add_argument("-tU", "--targets-urls-file", default=None, type=str, help="Path to file containing a line by line list of target URLs.")
-    group_targets_source.add_argument("-tp", "--target-ports", default="80,443,8080,8081,9080,9081,10080", type=str, help="Target ports to scan top search for Apache Tomcat servers.")
+    group_targets_source.add_argument("-tp", "--target-ports", default="80,443,8080,8081,8180,9080,9081,10080", type=str, help="Target ports to scan top search for Apache Tomcat servers.")
     group_targets_source.add_argument("-ad", "--auth-domain", default="", type=str, help="Windows domain to authenticate to.")
     group_targets_source.add_argument("-ai", "--auth-dc-ip", default=None, type=str, help="IP of the domain controller.")
     group_targets_source.add_argument("-au", "--auth-user", default=None, type=str, help="Username of the domain account.")

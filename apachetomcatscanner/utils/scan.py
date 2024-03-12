@@ -47,6 +47,8 @@ def get_version_from_malformed_http_request(url, config):
         ("GET", url + "/{}"),
         ("GET", url + "/" + "..;/" * url_depth + "{}"),
         ("GET", url + "/..;/..;/"),
+        ("GET", url + "/..;/"),
+        ("GET", url + "/..;/status.html"),
         ("ACL", url + "/"),
     ]
     test_urls = list(set(test_urls))
@@ -61,7 +63,7 @@ def get_version_from_malformed_http_request(url, config):
                     headers=config.request_http_headers,
                     verify=(not (config.request_no_check_certificate))
                 )
-                if r.status_code in [400, 401, 403, 404, 405, 500]:
+                if r.status_code in [400, 401, 403, 404, 405, 406, 500]:
                     # Bug triggered
                     matched = re.search(b"(<h3>)Apache Tomcat(/)?([^<]+)(</h3>)", r.content)
                     if matched is not None:

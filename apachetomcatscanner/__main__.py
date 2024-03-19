@@ -37,6 +37,7 @@ def load_targets(options, config):
             auth_username=options.auth_user,
             auth_password=options.auth_password,
             auth_hashes=options.auth_hashes,
+            auth_key=None,
             use_ldaps=options.ldaps,
             __print=True
         )
@@ -51,6 +52,7 @@ def load_targets(options, config):
             auth_username=options.auth_user,
             auth_password=options.auth_password,
             auth_hashes=options.auth_hashes,
+            auth_key=None,
             use_ldaps=options.ldaps,
             __print=True
         )
@@ -65,6 +67,7 @@ def load_targets(options, config):
             auth_username=options.auth_user,
             auth_password=options.auth_password,
             auth_hashes=options.auth_hashes,
+            auth_key=None,
             use_ldaps=options.ldaps,
             __print=True
         )

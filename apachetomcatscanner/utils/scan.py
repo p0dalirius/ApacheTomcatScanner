@@ -28,6 +28,7 @@ def is_tomcat_manager_accessible(url_manager, config):
             url_manager,
             timeout=config.request_timeout,
             proxies=config.request_proxies,
+            headers=config.request_http_headers,
             verify=(not (config.request_no_check_certificate))
         )
         if r.status_code in [401]:
@@ -46,6 +47,8 @@ def get_version_from_malformed_http_request(url, config):
         ("GET", url + "/{}"),
         ("GET", url + "/" + "..;/" * url_depth + "{}"),
         ("GET", url + "/..;/..;/"),
+        ("GET", url + "/..;/"),
+        ("GET", url + "/..;/status.html"),
         ("ACL", url + "/"),
     ]
     test_urls = list(set(test_urls))
@@ -57,9 +60,10 @@ def get_version_from_malformed_http_request(url, config):
                     url=test_url,
                     timeout=config.request_timeout,
                     proxies=config.request_proxies,
+                    headers=config.request_http_headers,
                     verify=(not (config.request_no_check_certificate))
                 )
-                if r.status_code in [400, 401, 403, 404, 405, 500]:
+                if r.status_code in [400, 401, 403, 404, 405, 406, 500]:
                     # Bug triggered
                     matched = re.search(b"(<h3>)Apache Tomcat(/)?([^<]+)(</h3>)", r.content)
                     if matched is not None:
@@ -72,6 +76,7 @@ def get_version_from_malformed_http_request(url, config):
                 url=(url + "/docs/"),
                 timeout=config.request_timeout,
                 proxies=config.request_proxies,
+                headers=config.request_http_headers,
                 verify=(not (config.request_no_check_certificate))
             )
             if r.status_code == 200:
@@ -91,11 +96,14 @@ def try_default_credentials(url_manager, config):
     try:
         for credentials in config.credentials:
             auth_string = bytes(credentials["username"] + ':' + credentials["password"], 'utf-8')
+            headers={
+                    "Authorization": "Basic " + base64.b64encode(auth_string).decode('utf-8')
+                }
+            headers.update(config.request_http_headers)
+            
             r = requests.post(
                 url_manager,
-                headers={
-                    "Authorization": "Basic " + base64.b64encode(auth_string).decode('utf-8')
-                },
+                headers=headers,
                 timeout=config.request_timeout,
                 proxies=config.request_proxies,
                 verify=(not (config.request_no_check_certificate))

@@ -141,8 +141,8 @@ class Config(object):
         if proxy_ip is not None and proxy_port is not None:
             if protocol is None:
                 self.request_proxies = {
-                    "http": "http://%s:%d/" % (proxy_ip, proxy_port),
-                    "https": "https://%s:%d/" % (proxy_ip, proxy_port)
+                    "http": "%s:%d" % (proxy_ip, proxy_port),
+                    "https": "%s:%d" % (proxy_ip, proxy_port)
                 }
             else:
                 self.request_proxies[protocol] = "%s://%s:%d/" % (protocol, proxy_ip, proxy_port)

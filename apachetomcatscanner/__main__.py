@@ -21,7 +21,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 VERSION = "3.7"
 
-banner = """Apache Tomcat Scanner v%s - by @podalirius_\n""" % VERSION
+banner = """Apache Tomcat Scanner v%s - by Remi GASCOU (Podalirius)\n""" % VERSION
 
 
 def load_targets(options, config):

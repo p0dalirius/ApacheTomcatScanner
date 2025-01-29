@@ -37,7 +37,7 @@ sudo python3 -m pip install apachetomcatscanner
 
 ```
 $ ./ApacheTomcatScanner.py -h
-Apache Tomcat Scanner v3.4 - by @podalirius_
+Apache Tomcat Scanner v3.4 - by Remi GASCOU (Podalirius)
 
 usage: ApacheTomcatScanner.py [-h] [-v] [--debug] [-C] [--show-cves-descriptions] [-T THREADS] [-s] [--no-colors] [--only-http] [--only-https] [--export-xlsx EXPORT_XLSX] [--export-json EXPORT_JSON] [--export-sqlite EXPORT_SQLITE]
                               [-PI PROXY_IP] [-PP PROXY_PORT] [-rt REQUEST_TIMEOUT] [--tomcat-username TOMCAT_USERNAME] [--tomcat-usernames-file TOMCAT_USERNAMES_FILE] [--tomcat-password TOMCAT_PASSWORD]

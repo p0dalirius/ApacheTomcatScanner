@@ -213,6 +213,7 @@ def main():
 
     config = Config()
     config.set_debug_mode(options.debug)
+    config.set_verbose_mode(options.verbose)
     config.set_no_colors(options.no_colors)
     config.set_request_available_schemes(only_http=options.only_http, only_https=options.only_https)
     config.set_request_timeout(options.request_timeout)

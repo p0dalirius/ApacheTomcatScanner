@@ -91,7 +91,7 @@ def get_version_from_malformed_http_request(url, config):
         return None
 
 
-def try_default_credentials(url_manager, config):
+def try_credentials(url_manager, config):
     found_credentials = []
     try:
         for credentials in config.credentials:
@@ -112,7 +112,7 @@ def try_default_credentials(url_manager, config):
                 found_credentials.append((r.status_code, credentials))
         return found_credentials
     except Exception as e:
-        config.debug("Error in get_version_from_malformed_http_request('%s'): %s " % (url_manager, e))
+        config.debug(f"Error : {e} ")
         return found_credentials
 
 
@@ -155,7 +155,7 @@ def process_url(scheme, target, port, url, config, reporter):
         if result["manager_accessible"]:
             config.debug("Manager is accessible")
             # Test for default credentials
-            credentials_found = try_default_credentials(url_manager, config)
+            credentials_found = try_credentials(url_manager, config)
 
         reporter.report_result(target, port, result, credentials_found)
 

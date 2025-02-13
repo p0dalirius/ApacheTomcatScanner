@@ -66,17 +66,15 @@ class Config(object):
             f.close()
 
         if len(usernames) != 0 and len(passwords) != 0:
-            self.credentials = {"credentials": []}
+            self.credentials = []
             for username in usernames:
                 for password in passwords:
-                    self.credentials["credentials"].append({
+                    self.credentials.append({
                         "username": username,
                         "password": password,
                         "description": ""
                     })
-            return True
-        else:
-            return False
+        return len(self.credentials)
 
     # Get / Set functions
 

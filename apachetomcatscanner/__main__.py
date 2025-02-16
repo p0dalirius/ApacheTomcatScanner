@@ -213,6 +213,7 @@ def main():
 
     config = Config()
     config.set_debug_mode(options.debug)
+    config.set_verbose_mode(options.verbose)
     config.set_no_colors(options.no_colors)
     config.set_request_available_schemes(only_http=options.only_http, only_https=options.only_https)
     config.set_request_timeout(options.request_timeout)
@@ -222,7 +223,9 @@ def main():
     config.set_list_cves_mode(options.list_cves)
     config.set_show_cves_descriptions_mode(options.show_cves_descriptions)
 
-    config.load_credentials_from_options(options.tomcat_username, options.tomcat_password, options.tomcat_usernames_file, options.tomcat_passwords_file)
+    number_of_tested_credentials = config.load_credentials_from_options(options.tomcat_username, options.tomcat_password, options.tomcat_usernames_file, options.tomcat_passwords_file)
+    if config.verbose_mode:
+        print("[verbose] %s credentials will be tested per target" % number_of_tested_credentials)
 
     vulns_db = VulnerabilitiesDB(config=config)
     reporter = Reporter(config=config, vulns_db=vulns_db)

@@ -190,7 +190,7 @@ def parseArgs():
 
     args = parser.parse_args()
 
-    if (args.targets_file is None) and (len(args.target) == 0) and (len(args.target_url) == 0) and (args.auth_user is None and (args.auth_password is None or args.auth_hashes is None)):
+    if (args.targets_file is None) and (len(args.target) == 0) and (len(args.target_url) == 0) and (args.auth_user is None and (args.auth_password is None or args.auth_hashes is None)) and (args.targets_urls_file is None):
         parser.print_help()
         print("\n[!] No targets specified.")
         sys.exit(0)

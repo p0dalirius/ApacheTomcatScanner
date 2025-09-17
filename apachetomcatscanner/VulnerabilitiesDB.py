@@ -20,23 +20,25 @@ class VulnerabilitiesDB(object):
         self.cves = {}
         self.versions_to_cves = {}
         self.load()
-    
+
     def load(self):
         self.cves = {}
         self.config.debug("Loading CVEs from JSON database ...")
 
         # Load all CVEs from JSON files
-        path_to_json_files = os.path.sep.join([os.path.dirname(__file__), "data", "vulnerabilities", "*", "CVE-*.json"])
+        path_to_json_files = os.path.sep.join(
+            [os.path.dirname(__file__), "data", "vulnerabilities", "*", "CVE-*.json"]
+        )
 
         for cve_json_file in glob.glob(path_to_json_files):
             try:
-                f = open(cve_json_file, 'r')
+                f = open(cve_json_file, "r")
                 cve = json.loads(f.read())
                 f.close()
                 if "cve" in cve.keys():
                     if "id" in cve["cve"].keys():
                         self.cves[cve["cve"]["id"]] = cve
-            except Exception as e:
+            except Exception:
                 pass
         self.config.debug("Loaded %d CVEs!" % len(self.cves.keys()))
 
@@ -48,21 +50,29 @@ class VulnerabilitiesDB(object):
                         self.versions_to_cves[version["tag"]] = []
                     self.versions_to_cves[version["tag"]].append(cve_data)
 
-    def get_vulnerabilities_of_version_sorted_by_criticity(self, version_tag, colors=False, reverse=False):
+    def get_vulnerabilities_of_version_sorted_by_criticity(
+        self, version_tag, colors=False, reverse=False
+    ):
         colored_criticity = {
             "None": "\x1b[1;48;2;83;170;51;97m%s\x1b[0m",
             "Low": "\x1b[1;48;2;255;203;13;97m%s\x1b[0m",
             "Medium": "\x1b[1;48;2;249;160;9;97m%s\x1b[0m",
             "High": "\x1b[1;48;2;233;61;3;97m%s\x1b[0m",
-            "Critical": "\x1b[1;48;2;45;45;45;97m%s\x1b[0m"
+            "Critical": "\x1b[1;48;2;45;45;45;97m%s\x1b[0m",
         }
         vulnerabilities = []
         if version_tag in self.versions_to_cves.keys():
             vulnerabilities = self.versions_to_cves[version_tag]
-            vulnerabilities = sorted(vulnerabilities, key=lambda cve: cve["cvss"]["score"], reverse=reverse)
+            vulnerabilities = sorted(
+                vulnerabilities, key=lambda cve: cve["cvss"]["score"], reverse=reverse
+            )
             if colors:
                 vulnerabilities = [
-                    (colored_criticity[vuln["cvss"]["criticity"]] % vuln["cve"]["id"], vuln)
+                    (
+                        colored_criticity[vuln["cvss"]["criticity"]]
+                        % vuln["cve"]["id"],
+                        vuln,
+                    )
                     for vuln in vulnerabilities
                 ]
         return vulnerabilities
@@ -71,5 +81,7 @@ class VulnerabilitiesDB(object):
         vulnerabilities = []
         if version_tag in self.versions_to_cves.keys():
             vulnerabilities = self.versions_to_cves[version_tag]
-            vulnerabilities = sorted(vulnerabilities, key=lambda cve: cve["cve"]["year"], reverse=reverse)
+            vulnerabilities = sorted(
+                vulnerabilities, key=lambda cve: cve["cve"]["year"], reverse=reverse
+            )
         return vulnerabilities

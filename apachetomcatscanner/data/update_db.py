@@ -5,13 +5,14 @@
 # Date created       : 5 Dec 2022
 
 
+import datetime
+import glob
 import json
 import os
 import re
-import datetime
+
 import requests
 from bs4 import BeautifulSoup
-import glob
 
 
 def get_versions_order():
@@ -20,21 +21,30 @@ def get_versions_order():
     for major_version in [3, 4, 5, 6, 7, 8, 9, 10, 11]:
         base_url = "https://archive.apache.org/dist/tomcat/tomcat-%d/" % major_version
         r = requests.get(base_url)
-        matched = re.findall(b"((<a href=[^>]+>[^<]+</a>)[ \t\n]+([0-9]{4}-[0-9]{2}-[0-9]{2}[ \t\n]+[0-9]{2}:[0-9]{2}(:[0-9]{2})?))", r.content)
+        matched = re.findall(
+            b"((<a href=[^>]+>[^<]+</a>)[ \t\n]+([0-9]{4}-[0-9]{2}-[0-9]{2}[ \t\n]+[0-9]{2}:[0-9]{2}(:[0-9]{2})?))",
+            r.content,
+        )
         for _, a, d, _ in matched:
-            a = BeautifulSoup(a, "lxml").find('a')
+            a = BeautifulSoup(a, "lxml").find("a")
             if a is not None:
                 if a["href"].endswith("/"):
-                    version = re.search("([0-9]+\.[0-9]+\.[0-9]+(-M[0-9]+)?)", a["href"])
+                    version = re.search(
+                        r"([0-9]+\.[0-9]+\.[0-9]+(-M[0-9]+)?)", a["href"]
+                    )
                     if version is not None:
                         version = version.groups()[0]
-                        release_date = datetime.datetime.strptime(d.decode('utf-8'), "%Y-%m-%d %H:%M")
+                        release_date = datetime.datetime.strptime(
+                            d.decode("utf-8"), "%Y-%m-%d %H:%M"
+                        )
                         release_date_ts = int(release_date.timestamp())
 
                         if release_date_ts not in dates_releases.keys():
                             dates_releases[release_date_ts] = []
                         dates_releases[release_date_ts].append(version)
-                        dates_releases[release_date_ts] = list(set(dates_releases[release_date_ts]))
+                        dates_releases[release_date_ts] = list(
+                            set(dates_releases[release_date_ts])
+                        )
 
                         if version not in releases_dates.keys():
                             releases_dates[version] = []
@@ -71,23 +81,30 @@ def get_versions_in_range(dates_releases, releases_dates, version_start, version
 
 
 def add_versions_ranges_from_description(dates_releases, releases_dates, cve_data):
-    matched = re.findall('(([0-9]+\.[0-9]+\.[0-9]+(-M[0-9]+)?) (to|through) ([0-9]+\.[0-9]+\.[0-9]+(-M[0-9]+)?))', cve_data["description"])
+    matched = re.findall(
+        r"(([0-9]+\.[0-9]+\.[0-9]+(-M[0-9]+)?) (to|through) ([0-9]+\.[0-9]+\.[0-9]+(-M[0-9]+)?))",
+        cve_data["description"],
+    )
     version_ranges = [(m[1], m[4]) for m in matched]
 
     for version_start, version_stop in version_ranges:
-        versions_in_range = get_versions_in_range(dates_releases, releases_dates, version_start, version_stop)
+        versions_in_range = get_versions_in_range(
+            dates_releases, releases_dates, version_start, version_stop
+        )
         # print("Versions range %s ──> %s : %s" % (version_start, version_stop, versions_in_range))
         for version_tag in versions_in_range:
-            matched = re.search("([0-9]+\.[0-9]+\.[0-9]+(-M[0-9]+)?)", version_tag)
+            matched = re.search(r"([0-9]+\.[0-9]+\.[0-9]+(-M[0-9]+)?)", version_tag)
             if matched is not None:
                 Version, Update = matched.groups()
-                cve_data["affected_versions"].append({
-                    "tag": version_tag,
-                    "version": Version,
-                    "language": "*",
-                    "update": Update,
-                    "edition": "*"
-                })
+                cve_data["affected_versions"].append(
+                    {
+                        "tag": version_tag,
+                        "version": Version,
+                        "language": "*",
+                        "update": Update,
+                        "edition": "*",
+                    }
+                )
 
     # Unique set
     new_versions = []
@@ -102,32 +119,32 @@ def add_versions_ranges_from_description(dates_releases, releases_dates, cve_dat
 
 def parse_vulns(vulnerabilities_in_this_ver, Version, Language, Update, Edition, CVES):
     r = requests.get("https://www.cvedetails.com/%s" % vulnerabilities_in_this_ver)
-    soup = BeautifulSoup(r.content, 'lxml')
+    soup = BeautifulSoup(r.content, "lxml")
 
-    table = soup.find('table', attrs={"id": "vulnslisttable"})
+    table = soup.find("table", attrs={"id": "vulnslisttable"})
     for tr in table.findAll("tr"):
-        tds = tr.findAll('td')
+        tds = tr.findAll("td")
         if len(tds) == 15:
-            id = tds[0].text.strip()
+            # id = tds[0].text.strip()
 
             cve_id = tds[1].text.strip()
             print("   [>] Parsing %s" % cve_id)
-            cve_id_link = "https://www.cvedetails.com" + tds[1].find('a')['href']
+            cve_id_link = "https://www.cvedetails.com" + tds[1].find("a")["href"]
 
-            cwe_id = tds[2].text.strip()
-            cwe_id_link = None
-            if tds[2].find('a') is not None:
-                cwe_id_link = "https://www.cvedetails.com" + tds[2].find('a')['href']
+            # cwe_id = tds[2].text.strip()
+            # cwe_id_link = None
+            # if tds[2].find("a") is not None:
+            #     cwe_id_link = "https://www.cvedetails.com" + tds[2].find("a")["href"]
 
             if cve_id not in CVES.keys():
                 CVES[cve_id] = {}
 
             if "cve" not in CVES[cve_id].keys():
                 CVES[cve_id]["cve"] = {}
-            number_of_exploits = tds[3].text.strip()
+            # number_of_exploits = tds[3].text.strip()
             CVES[cve_id]["cve"]["name"] = ""
             CVES[cve_id]["cve"]["id"] = cve_id
-            CVES[cve_id]["cve"]["year"] = int(cve_id.split('-')[1])
+            CVES[cve_id]["cve"]["year"] = int(cve_id.split("-")[1])
             CVES[cve_id]["cve"]["vuln_type"] = tds[4].text.strip()
             CVES[cve_id]["cve"]["publish_date"] = tds[5].text.strip()
             CVES[cve_id]["cve"]["update_date"] = tds[6].text.strip()
@@ -159,72 +176,96 @@ def parse_vulns(vulnerabilities_in_this_ver, Version, Language, Update, Edition,
 
             if "affected_versions" not in CVES[cve_id].keys():
                 CVES[cve_id]["affected_versions"] = []
-            CVES[cve_id]["affected_versions"].append({
-                "tag": (Version + '-' + Update if Update != '*' else Version),
-                "version": Version,
-                "language": Language,
-                "update": Update,
-                "edition": Edition
-            })
+            CVES[cve_id]["affected_versions"].append(
+                {
+                    "tag": (Version + "-" + Update if Update != "*" else Version),
+                    "version": Version,
+                    "language": Language,
+                    "update": Update,
+                    "edition": Edition,
+                }
+            )
 
             if "references" not in CVES[cve_id].keys():
                 CVES[cve_id]["references"] = []
-            CVES[cve_id]["references"].append("https://nvd.nist.gov/vuln/detail/%s" % cve_id)
+            CVES[cve_id]["references"].append(
+                "https://nvd.nist.gov/vuln/detail/%s" % cve_id
+            )
 
             r = requests.get(cve_id_link)
-            soup = BeautifulSoup(r.content, 'lxml')
+            soup = BeautifulSoup(r.content, "lxml")
 
-            cvedetailssummary = soup.find('div', attrs={"class": "cvedetailssummary"})
-            CVES[cve_id]["description"] = cvedetailssummary.text.strip().split('Publish Date : ')[0].strip()
+            cvedetailssummary = soup.find("div", attrs={"class": "cvedetailssummary"})
+            CVES[cve_id]["description"] = (
+                cvedetailssummary.text.strip().split("Publish Date : ")[0].strip()
+            )
 
-            vulnrefstable = soup.find('table', attrs={"id": "vulnrefstable"})
-            for tr in vulnrefstable.findAll('tr'):
-                links = [a['href'] for a in tr.findAll('a')]
+            vulnrefstable = soup.find("table", attrs={"id": "vulnrefstable"})
+            for tr in vulnrefstable.findAll("tr"):
+                links = [a["href"] for a in tr.findAll("a")]
                 for link in links:
                     CVES[cve_id]["references"].append(link)
             CVES[cve_id]["references"] = list(sorted(set(CVES[cve_id]["references"])))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     CVES = {}
 
     if os.path.exists("./vulnerabilities/"):
         for file in glob.glob("./vulnerabilities/*/*.json"):
-            f = open(file, "r")
-            data = json.loads(f.read())
-            f.close()
+            with open(file, "r") as f:
+                data = json.loads(f.read())
             CVES[data["cve"]["id"]] = data
 
-    r = requests.get("https://www.cvedetails.com/version-list/45/887/2/Apache-Tomcat.html?sha=1e26d2dc4f7319bbf6b0bf066415a3daf97151c8&order=1&trc=986")
-    soup = BeautifulSoup(r.content, 'lxml')
+    r = requests.get(
+        "https://www.cvedetails.com/version-list/45/887/2/Apache-Tomcat.html?sha=1e26d2dc4f7319bbf6b0bf066415a3daf97151c8&order=1&trc=986"
+    )
+    soup = BeautifulSoup(r.content, "lxml")
 
-    pagingb = soup.find('div', attrs={"id": "pagingb", "class": "paging"})
-    pages = list(map(int, [a.text.strip() for a in pagingb.findAll('a')]))
+    pagingb = soup.find("div", attrs={"id": "pagingb", "class": "paging"})
+    pages = list(map(int, [a.text.strip() for a in pagingb.findAll("a")]))
 
     for page_number in pages:
-        r = requests.get("https://www.cvedetails.com/version-list/45/887/%d/Apache-Tomcat.html?sha=1e26d2dc4f7319bbf6b0bf066415a3daf97151c8&order=1&trc=986" % page_number)
-        soup = BeautifulSoup(r.content, 'lxml')
+        r = requests.get(
+            "https://www.cvedetails.com/version-list/45/887/%d/Apache-Tomcat.html?sha=1e26d2dc4f7319bbf6b0bf066415a3daf97151c8&order=1&trc=986"
+            % page_number
+        )
+        soup = BeautifulSoup(r.content, "lxml")
 
-        table = soup.find('table', attrs={"class": "listtable"})
+        table = soup.find("table", attrs={"class": "listtable"})
         print("[>] Parsing page %d/%d" % (page_number, pages[-1]))
         for tr in table.findAll("tr"):
-            tds = tr.findAll('td')
+            tds = tr.findAll("td")
             if len(tds) == 6:
                 Version = tds[0].text.strip()
                 Language = tds[1].text.strip()
                 Update = tds[2].text.strip()
                 Edition = tds[3].text.strip()
                 Number_of_Vulnerabilities = int(tds[4].text.strip())
-                links = tds[5].findAll('a')
+                links = tds[5].findAll("a")
                 version_details = links[0]["href"]
                 vulnerabilities_in_this_ver = links[1]["href"]
-                if not (Version == "*" and Language == "*" and Update == "*" and Edition == "*"):
-                    parse_vulns(vulnerabilities_in_this_ver, Version, Language, Update, Edition, CVES)
+                if not (
+                    Version == "*"
+                    and Language == "*"
+                    and Update == "*"
+                    and Edition == "*"
+                ):
+                    parse_vulns(
+                        vulnerabilities_in_this_ver,
+                        Version,
+                        Language,
+                        Update,
+                        Edition,
+                        CVES,
+                    )
 
     dates_releases, releases_dates = get_versions_order()
 
     for cve_id, cve_data in CVES.items():
-        cve_data = add_versions_ranges_from_description(dates_releases, releases_dates, cve_data)
+        cve_data = add_versions_ranges_from_description(
+            dates_releases, releases_dates, cve_data
+        )
 
         save_path = "./vulnerabilities/%d/%s.json" % (cve_data["cve"]["year"], cve_id)
 
@@ -232,8 +273,7 @@ if __name__ == '__main__':
             os.makedirs(os.path.dirname(save_path))
 
         if not os.path.exists(save_path):
-            f = open(save_path, 'w')
-            f.write(json.dumps(cve_data, indent=4))
-            f.close()
+            with open(save_path, "w") as f:
+                f.write(json.dumps(cve_data, indent=4))
         else:
             print("[+] Skipping %s because it already exists." % cve_id)

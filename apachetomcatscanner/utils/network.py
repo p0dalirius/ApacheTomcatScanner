@@ -7,12 +7,15 @@
 import socket
 
 import requests
+
 # Disable warnings of insecure connection for invalid certificates
 requests.packages.urllib3.disable_warnings()
 # Allow use of deprecated and weak cipher methods
-requests.packages.urllib3.util.ssl_.DEFAULT_CIPHERS += ':HIGH:!DH:!aNULL'
+requests.packages.urllib3.util.ssl_.DEFAULT_CIPHERS += ":HIGH:!DH:!aNULL"
 try:
-    requests.packages.urllib3.contrib.pyopenssl.util.ssl_.DEFAULT_CIPHERS += ':HIGH:!DH:!aNULL'
+    requests.packages.urllib3.contrib.pyopenssl.util.ssl_.DEFAULT_CIPHERS += (
+        ":HIGH:!DH:!aNULL"
+    )
 except AttributeError:
     pass
 
@@ -39,8 +42,9 @@ def is_port_open(target, port) -> bool:
         # Non-existant domains cause a lot of errors, added error handling
         try:
             return s.connect_ex((target, port)) == 0
-        except Exception as e:
+        except Exception:
             return False
+
 
 def is_http_accessible(target, port, config, scheme="http"):
     url = "%s://%s:%d/" % (scheme, target, port)
@@ -50,9 +54,12 @@ def is_http_accessible(target, port, config, scheme="http"):
             timeout=config.request_timeout,
             proxies=config.request_proxies,
             headers=config.request_http_headers,
-            verify=(not (config.request_no_check_certificate))
+            verify=(not (config.request_no_check_certificate)),
         )
-        return True
+        return r.status_code == 200
     except Exception as e:
-        config.debug("Error in is_http_accessible('%s', %d, '%s'): %s " % (target, port, scheme, e))
+        config.debug(
+            "Error in is_http_accessible('%s', %d, '%s'): %s "
+            % (target, port, scheme, e)
+        )
         return False

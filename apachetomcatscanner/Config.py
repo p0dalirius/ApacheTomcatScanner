@@ -39,13 +39,21 @@ class Config(object):
 
     def __load_default_credentials(self):
         self.credentials = {}
-        path_to_creds = os.path.dirname(__file__) + os.path.sep + 'data' + os.path.sep + 'credentials.json'
-        f = open(path_to_creds, 'r')
+        path_to_creds = (
+            os.path.dirname(__file__)
+            + os.path.sep
+            + "data"
+            + os.path.sep
+            + "credentials.json"
+        )
+        f = open(path_to_creds, "r")
         self.credentials = json.loads(f.read())["credentials"]
         f.close()
         return None
 
-    def load_credentials_from_options(self, username, password, usernames_file, passwords_file):
+    def load_credentials_from_options(
+        self, username, password, usernames_file, passwords_file
+    ):
         usernames = []
         passwords = []
 
@@ -69,11 +77,9 @@ class Config(object):
             self.credentials = []
             for username in usernames:
                 for password in passwords:
-                    self.credentials.append({
-                        "username": username,
-                        "password": password,
-                        "description": ""
-                    })
+                    self.credentials.append(
+                        {"username": username, "password": password, "description": ""}
+                    )
         return len(self.credentials)
 
     # Get / Set functions
@@ -122,7 +128,7 @@ class Config(object):
         return self.debug_mode
 
     def set_debug_mode(self, value):
-        if value == True:
+        if value:
             self.verbose_mode = True
         self.debug_mode = value
 
@@ -140,10 +146,14 @@ class Config(object):
             if protocol is None:
                 self.request_proxies = {
                     "http": "%s:%d" % (proxy_ip, proxy_port),
-                    "https": "%s:%d" % (proxy_ip, proxy_port)
+                    "https": "%s:%d" % (proxy_ip, proxy_port),
                 }
             else:
-                self.request_proxies[protocol] = "%s://%s:%d/" % (protocol, proxy_ip, proxy_port)
+                self.request_proxies[protocol] = "%s://%s:%d/" % (
+                    protocol,
+                    proxy_ip,
+                    proxy_port,
+                )
         return self.request_proxies
 
     def clear_request_proxies(self):
@@ -151,7 +161,7 @@ class Config(object):
 
     def get_no_colors(self):
         return self.no_colors
-    
+
     def set_no_colors(self, value):
         self.no_colors = value
 

@@ -6,18 +6,23 @@
 
 import base64
 import datetime
+import re
 import time
 import traceback
 import urllib.parse
-import re
-from apachetomcatscanner.utils.network import is_port_open, is_http_accessible
+
 import requests
+
+from apachetomcatscanner.utils.network import is_http_accessible, is_port_open
+
 # Disable warnings of insecure connection for invalid certificates
 requests.packages.urllib3.disable_warnings()
 # Allow use of deprecated and weak cipher methods
-requests.packages.urllib3.util.ssl_.DEFAULT_CIPHERS += ':HIGH:!DH:!aNULL'
+requests.packages.urllib3.util.ssl_.DEFAULT_CIPHERS += ":HIGH:!DH:!aNULL"
 try:
-    requests.packages.urllib3.contrib.pyopenssl.util.ssl_.DEFAULT_CIPHERS += ':HIGH:!DH:!aNULL'
+    requests.packages.urllib3.contrib.pyopenssl.util.ssl_.DEFAULT_CIPHERS += (
+        ":HIGH:!DH:!aNULL"
+    )
 except AttributeError:
     pass
 
@@ -29,20 +34,22 @@ def is_tomcat_manager_accessible(url_manager, config):
             timeout=config.request_timeout,
             proxies=config.request_proxies,
             headers=config.request_http_headers,
-            verify=(not (config.request_no_check_certificate))
+            verify=(not (config.request_no_check_certificate)),
         )
         if r.status_code in [401]:
             return True
         else:
             return False
     except Exception as e:
-        config.debug("Error in is_tomcat_manager_accessible('%s'): %s " % (url_manager, e))
+        config.debug(
+            "Error in is_tomcat_manager_accessible('%s'): %s " % (url_manager, e)
+        )
         return False
 
 
 def get_version_from_malformed_http_request(url, config):
     version = None
-    url_depth = len(url.split('/')[3:])
+    url_depth = len(url.split("/")[3:])
     test_urls = [
         ("GET", url + "/{}"),
         ("GET", url + "/" + "..;/" * url_depth + "{}"),
@@ -61,14 +68,16 @@ def get_version_from_malformed_http_request(url, config):
                     timeout=config.request_timeout,
                     proxies=config.request_proxies,
                     headers=config.request_http_headers,
-                    verify=(not (config.request_no_check_certificate))
+                    verify=(not (config.request_no_check_certificate)),
                 )
                 if r.status_code in [400, 401, 403, 404, 405, 406, 500]:
                     # Bug triggered
-                    matched = re.search(b"(<h3>)Apache Tomcat(/)?([^<]+)(</h3>)", r.content)
+                    matched = re.search(
+                        b"(<h3>)Apache Tomcat(/)?([^<]+)(</h3>)", r.content
+                    )
                     if matched is not None:
                         _, _, _version, _ = matched.groups()
-                        version = _version.decode('utf-8')
+                        version = _version.decode("utf-8")
         # If version is still None, try to get it through the docs
         if version is None and True:
             r = requests.request(
@@ -77,17 +86,22 @@ def get_version_from_malformed_http_request(url, config):
                 timeout=config.request_timeout,
                 proxies=config.request_proxies,
                 headers=config.request_http_headers,
-                verify=(not (config.request_no_check_certificate))
+                verify=(not (config.request_no_check_certificate)),
             )
             if r.status_code == 200:
-                matched = re.search(b'(<div class="versionInfo">)Version( )*([^,]+),([^<]+)(</div>)', r.content)
+                matched = re.search(
+                    b'(<div class="versionInfo">)Version( )*([^,]+),([^<]+)(</div>)',
+                    r.content,
+                )
                 if matched is not None:
                     _, _, _version, _, _ = matched.groups()
-                    version = _version.decode('utf-8')
+                    version = _version.decode("utf-8")
                     print("Version using docs")
         return version
     except Exception as e:
-        config.debug("Error in get_version_from_malformed_http_request('%s'): %s " % (url, e))
+        config.debug(
+            "Error in get_version_from_malformed_http_request('%s'): %s " % (url, e)
+        )
         return None
 
 
@@ -95,18 +109,21 @@ def try_credentials(url_manager, config):
     found_credentials = []
     try:
         for credentials in config.credentials:
-            auth_string = bytes(credentials["username"] + ':' + credentials["password"], 'utf-8')
-            headers={
-                    "Authorization": "Basic " + base64.b64encode(auth_string).decode('utf-8')
-                }
+            auth_string = bytes(
+                credentials["username"] + ":" + credentials["password"], "utf-8"
+            )
+            headers = {
+                "Authorization": "Basic "
+                + base64.b64encode(auth_string).decode("utf-8")
+            }
             headers.update(config.request_http_headers)
-            
+
             r = requests.post(
                 url_manager,
                 headers=headers,
                 timeout=config.request_timeout,
                 proxies=config.request_proxies,
-                verify=(not (config.request_no_check_certificate))
+                verify=(not (config.request_no_check_certificate)),
             )
             if r.status_code in [200, 403]:
                 found_credentials.append((r.status_code, credentials))
@@ -117,9 +134,9 @@ def try_credentials(url_manager, config):
 
 
 def process_url(scheme, target, port, url, config, reporter):
-    url = url.rstrip('/')
-    baseurl = '/'.join(url.split('/')[:3])
-    url_depth = len(url.split('/')[3:])
+    url = url.rstrip("/")
+    baseurl = "/".join(url.split("/")[:3])
+    url_depth = len(url.split("/")[3:])
 
     # Generating urls, with bypasses
     possible_manager_urls = [
@@ -135,7 +152,7 @@ def process_url(scheme, target, port, url, config, reporter):
     result = {
         "target": target,
         "scheme": scheme,
-        "version": get_version_from_malformed_http_request(url, config)
+        "version": get_version_from_malformed_http_request(url, config),
     }
 
     if result["version"] is not None:
@@ -146,7 +163,7 @@ def process_url(scheme, target, port, url, config, reporter):
         for url_manager in possible_manager_urls:
             if is_tomcat_manager_accessible(url_manager, config):
                 result["manager_accessible"] = True
-                result["manager_path"] = '/'.join(url_manager.split('/')[3:])
+                result["manager_path"] = "/".join(url_manager.split("/")[3:])
                 result["manager_url"] = url_manager
                 break
 
@@ -215,16 +232,20 @@ def monitor_thread(reporter, config, monitor_data):
     last_check, monitoring = 0, True
     while monitoring:
         new_check = monitor_data["actions_performed"]
-        rate = (new_check - last_check)
+        rate = new_check - last_check
         if not config.debug_mode:
             print("\r", end="")
         reporter.print_new_results()
-        print("[%s] Status (%d/%d) %5.2f %% | Rate %d tests/s        " % (
+        print(
+            "[%s] Status (%d/%d) %5.2f %% | Rate %d tests/s        "
+            % (
                 datetime.datetime.now().strftime("%Y/%m/%d %Hh%Mm%Ss"),
-                new_check, monitor_data["total"], (new_check/monitor_data["total"])*100,
-                rate
+                new_check,
+                monitor_data["total"],
+                (new_check / monitor_data["total"]) * 100,
+                rate,
             ),
-            end=("" if not config.debug_mode else "\n")
+            end=("" if not config.debug_mode else "\n"),
         )
         last_check = new_check
         time.sleep(1)
@@ -235,4 +256,3 @@ def monitor_thread(reporter, config, monitor_data):
         reporter.print_new_results()
 
     print()
-

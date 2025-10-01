@@ -15,10 +15,11 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "sectools>=1.3.10",
+    "sectools>=1.5.0",
     "xlsxwriter",
     "urllib3==1.26.16",
-    "requests==2.29.0"
+    "requests==2.29.0",
+    "ldap3"
 ]
 
 [build-system]

@@ -13,7 +13,7 @@ from concurrent.futures import ThreadPoolExecutor
 from sectools.network.domains import is_fqdn
 from sectools.network.ip import (expand_cidr, expand_port_range, is_ipv4_addr,
                                  is_ipv4_cidr, is_ipv6_addr)
-from sectools.windows.ldap.ldap import (get_computers_from_domain,
+from sectools.windows.ldap.wrappers import (get_computers_from_domain,
                                    get_servers_from_domain, get_subnets)
 
 from apachetomcatscanner.Config import Config

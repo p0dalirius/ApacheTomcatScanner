@@ -21,6 +21,15 @@ except AttributeError:
 
 
 def is_target_a_windows_machine(target) -> bool:
+    """
+    Check if the target is a Windows machine.
+
+    Args:
+        target: The target to check.
+
+    Returns:
+        True if the target is a Windows machine, False otherwise.
+    """
     # if port 135 and 445 open
     if is_port_open(target, 135) and is_port_open(target, 445):
         return True
@@ -29,6 +38,15 @@ def is_target_a_windows_machine(target) -> bool:
 
 
 def is_target_a_windows_domain_controller(target) -> bool:
+    """
+    Check if the target is a Windows domain controller.
+
+    Args:
+        target: The target to check.
+
+    Returns:
+        True if the target is a Windows domain controller, False otherwise.
+    """
     # if port 135 and 445 and 88 open
     if is_target_a_windows_machine(target) and is_port_open(target, 88):
         return True
@@ -37,6 +55,19 @@ def is_target_a_windows_domain_controller(target) -> bool:
 
 
 def is_port_open(target, port) -> bool:
+    """
+    Check if the port is open on the target.
+
+    Args:
+        target: The target to check.
+        port: The port to check.
+
+    Returns:
+        True if the port is open on the target, False otherwise.
+
+    Raises:
+        Exception: If an error occurs while checking if the port is open on the target.
+    """
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.settimeout(0.1)
         # Non-existant domains cause a lot of errors, added error handling
@@ -47,6 +78,21 @@ def is_port_open(target, port) -> bool:
 
 
 def is_http_accessible(target, port, config, scheme="http"):
+    """
+    Check if the target is accessible via HTTP.
+
+    Args:
+        target: The target to check.
+        port: The port to check.
+        config: The config object.
+        scheme: The scheme to use.
+
+    Returns:
+        True if the target is accessible via HTTP, False otherwise.
+
+    Raises:
+        Exception: If an error occurs while checking if the target is accessible via HTTP.
+    """
     url = "%s://%s:%d/" % (scheme, target, port)
     try:
         r = requests.get(
@@ -56,7 +102,7 @@ def is_http_accessible(target, port, config, scheme="http"):
             headers=config.request_http_headers,
             verify=(not (config.request_no_check_certificate)),
         )
-        return r.status_code == 200
+        return True
     except Exception as e:
         config.debug(
             "Error in is_http_accessible('%s', %d, '%s'): %s "

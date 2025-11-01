@@ -28,6 +28,18 @@ except AttributeError:
 
 
 def is_tomcat_manager_accessible(url_manager, config):
+    """
+    Check if the Tomcat manager is accessible.
+
+    Args:
+        url_manager: The URL to check.
+        config: The config object.
+
+    Returns:
+        True if the Tomcat manager is accessible, False otherwise.
+    Raises:
+        Exception: If an error occurs while checking if the Tomcat manager is accessible.
+    """
     try:
         r = requests.get(
             url_manager,
@@ -48,6 +60,18 @@ def is_tomcat_manager_accessible(url_manager, config):
 
 
 def get_version_from_malformed_http_request(url, config):
+    """
+    Get the version of the Apache Tomcat server from a malformed HTTP request.
+
+    Args:
+        url: The URL to check.
+        config: The config object.
+
+    Returns:
+        The version of the Apache Tomcat server, None if not found.
+    Raises:
+        Exception: If an error occurs while getting the version of the Apache Tomcat server from a malformed HTTP request.
+    """
     version = None
     url_depth = len(url.split("/")[3:])
     test_urls = [
@@ -106,6 +130,18 @@ def get_version_from_malformed_http_request(url, config):
 
 
 def try_credentials(url_manager, config):
+    """
+    Try to authenticate to the Tomcat manager.
+
+    Args:
+        url_manager: The URL to check.
+        config: The config object.
+
+    Returns:
+        A list of found credentials, None if not found.
+    Raises:
+        Exception: If an error occurs while trying to authenticate to the Tomcat manager.
+    """
     found_credentials = []
     try:
         for credentials in config.credentials:
@@ -143,6 +179,7 @@ def process_url(scheme, target, port, url, config, reporter):
         url,
         url + "/manager/html",
         url + "/..;/manager/html",
+        url + "..%09/manager/text",
         baseurl + "/manager/html",
         baseurl + "/..;/manager/html",
         url + "/" + "..;/" * url_depth + "manager/html",
